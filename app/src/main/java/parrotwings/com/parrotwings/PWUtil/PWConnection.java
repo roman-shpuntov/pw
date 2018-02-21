@@ -56,7 +56,7 @@ public class PWConnection {
 
 	private PWConnection() {
 		mClient = new DefaultHttpClient();
-		mListeners = new LinkedList<PWConnectionInterface>();
+		mListeners = new LinkedList<>();
 	}
 
 	public static PWConnection getInstance() {

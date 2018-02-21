@@ -5,15 +5,38 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.TextView;
+import android.widget.Toast;
 
-public class RegisterActivity extends AppCompatActivity {
-	private Button mBack;
-	private Button mSignup;
+import parrotwings.com.parrotwings.PWUtil.PWState;
+
+public class RegisterActivity extends AppCompatActivity implements PWState.PWStateInterface {
+	private TextView	mEmail;
+	private TextView	mName;
+	private TextView	mPassword;
+	private Button		mBack;
+	private Button		mSignup;
+
+	@Override
+	public void onReady() {
+		Intent intent = new Intent(this, MainActivity.class);
+		startActivity(intent);
+		finish();
+	}
+
+	@Override
+	public void onIncome() {}
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_register);
+
+		PWState.getInstance().addListener(this);
+
+		mEmail		= findViewById(R.id.register_email);
+		mName		= findViewById(R.id.register_name);
+		mPassword	= findViewById(R.id.register_password);
 
 		mBack = findViewById(R.id.register_back);
 		mBack.setOnClickListener(new View.OnClickListener() {
@@ -29,8 +52,22 @@ public class RegisterActivity extends AppCompatActivity {
 		mSignup.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View view) {
-
+				int rc = PWState.getInstance().register(mName.getText().toString(), mEmail.getText().toString(), mPassword.getText().toString());
+				if (rc != 0)
+					Toast.makeText(RegisterActivity.this, "Something wrong on registration. Please try again later", Toast.LENGTH_LONG).show();
 			}
 		});
+
+		// DEBUG
+		mEmail.setText("email123@domain.com");
+		mName.setText("username123");
+		mPassword.setText("password123");
+	}
+
+	@Override
+	protected void onDestroy() {
+		super.onDestroy();
+
+		PWState.getInstance().removeListener(this);
 	}
 }

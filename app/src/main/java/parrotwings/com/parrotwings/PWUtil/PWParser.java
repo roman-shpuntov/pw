@@ -15,10 +15,16 @@ import java.util.ListIterator;
 
 public class PWParser implements PWConnection.PWConnectionInterface {
 	public interface PWParserInterface {
-		void onRegistered();
-		void onLoggedin();
-		void onIncome();
+		void onResponseRegister(String result);
+		void onResponseLogin(String result);
+		void onResponseInfo(String result);
 	}
+
+	public static final String		API_TOKEN			= "id_token";
+	public static final String		API_INFO_USER		= "user_info_token";
+	public static final String		API_INFO_NAME		= "name";
+	public static final String		API_INFO_EMAIL		= "email";
+	public static final String		API_INFO_BALANCE	= "balance";
 
 	private	static final String		API_BASE_URL		= "http://193.124.114.46:3001";
 	private	static final String		API_REGISTER		= "/users";
@@ -30,6 +36,8 @@ public class PWParser implements PWConnection.PWConnectionInterface {
 
 	private	static final String		APPLICATION_JSON	= "application/json";
 	private	static final String		CONTENT_TYPE		= "Content-type";
+	private	static final String		AUTHORIZATION		= "Authorization";
+	private	static final String		BEARER				= "Bearer";
 
 	private	static final int		REQUEST_NONE		= 0;
 	private	static final int		REQUEST_REGISTER	= 1;
@@ -52,7 +60,7 @@ public class PWParser implements PWConnection.PWConnectionInterface {
 				ListIterator<PWParserInterface> itr = mListeners.listIterator();
 				while (itr.hasNext()) {
 					PWParserInterface iface = itr.next();
-					iface.onRegistered();
+					iface.onResponseRegister(result);
 				}
 			}
 			break;
@@ -61,7 +69,7 @@ public class PWParser implements PWConnection.PWConnectionInterface {
 				ListIterator<PWParserInterface> itr = mListeners.listIterator();
 				while (itr.hasNext()) {
 					PWParserInterface iface = itr.next();
-					iface.onLoggedin();
+					iface.onResponseLogin(result);
 				}
 			}
 			break;
@@ -72,8 +80,14 @@ public class PWParser implements PWConnection.PWConnectionInterface {
 			case REQUEST_TRANSACTION:
 				break;
 
-			case REQUEST_INFO:
-				break;
+			case REQUEST_INFO: {
+				ListIterator<PWParserInterface> itr = mListeners.listIterator();
+				while (itr.hasNext()) {
+					PWParserInterface iface = itr.next();
+					iface.onResponseInfo(result);
+				}
+			}
+			break;
 
 			case REQUEST_FILTER:
 				break;
@@ -95,7 +109,7 @@ public class PWParser implements PWConnection.PWConnectionInterface {
 
 	private PWParser() {
 		mRequest = REQUEST_NONE;
-		mListeners = new LinkedList<PWParserInterface>();
+		mListeners = new LinkedList<>();
 		PWConnection.getInstance().addListener(this);
 	}
 
@@ -152,6 +166,18 @@ public class PWParser implements PWConnection.PWConnectionInterface {
 
 		mRequest = REQUEST_LOGIN;
 		int rc = PWConnection.getInstance().send(PWConnection.TYPE_POST, API_BASE_URL + API_LOGIN, json.toString(), CONTENT_TYPE, APPLICATION_JSON);
+		if (rc != 0)
+			mRequest = REQUEST_NONE;
+
+		return rc;
+	}
+
+	public int info(PWUser user) {
+		if (isBusy())
+			return -1;
+
+		mRequest = REQUEST_INFO;
+		int rc = PWConnection.getInstance().send(PWConnection.TYPE_GET, API_BASE_URL + API_INFO, "", AUTHORIZATION, BEARER + " " + user.getToken());
 		if (rc != 0)
 			mRequest = REQUEST_NONE;
 

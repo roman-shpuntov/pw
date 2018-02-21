@@ -41,7 +41,6 @@ public class LogoActivity extends AppCompatActivity {
 
 					Intent intent = new Intent(LogoActivity.this, LoginActivity.class);
 					startActivity(intent);
-
 					finish();
 				}
 			});
