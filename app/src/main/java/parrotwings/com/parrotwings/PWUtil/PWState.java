@@ -1,7 +1,9 @@
 package parrotwings.com.parrotwings.PWUtil;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
@@ -22,7 +24,8 @@ public class PWState implements PWParser.PWParserInterface {
 	private	static final int	STATE_NONE			= 0;
 	private	static final int	STATE_LOGGEDIN		= 1;
 	private	static final int	STATE_REGISTERED	= 2;
-	private	static final int	STATE_READY			= 3;
+	private	static final int	STATE_LIST			= 3;
+	private	static final int	STATE_READY			= 4;
 
 	private static volatile PWState		mInstance;
 	private List<PWStateInterface>		mListeners;
@@ -46,6 +49,12 @@ public class PWState implements PWParser.PWParserInterface {
 	@Override
 	public void onResponseInfo(String result) {
 		if (extractInfo(result) == 0)
+			mNewState = STATE_LIST;
+	}
+
+	@Override
+	public void onResponseList(String result) {
+		if (extractList(result) == 0)
 			mNewState = STATE_READY;
 	}
 
@@ -57,7 +66,7 @@ public class PWState implements PWParser.PWParserInterface {
 			token = object.getString(PWParser.API_TOKEN);
 		}
 		catch (Exception e) {
-			PWLog.error("pwstate failed on onResponseRegister json");
+			PWLog.error("pwstate failed on extractToken json");
 			return -1;
 		}
 
@@ -81,7 +90,7 @@ public class PWState implements PWParser.PWParserInterface {
 			email = user.getString(PWParser.API_INFO_EMAIL);
 		}
 		catch (Exception e) {
-			PWLog.error("pwstate failed on onResponseRegister json");
+			PWLog.error("pwstate failed on extractInfo json");
 			return -1;
 		}
 
@@ -97,6 +106,32 @@ public class PWState implements PWParser.PWParserInterface {
 		return 0;
 	}
 
+	private int extractList(String result) {
+		PWTransaction	trans	= null;
+
+		try {
+			JSONObject object = new JSONObject(result);
+			JSONArray list = object.getJSONArray(PWParser.API_LIST_TRANS);
+			for (int i=0; i<list.length(); i++) {
+				JSONObject	item = list.getJSONObject(i);
+				Date		date = new Date(item.getString(PWParser.API_LIST_DATE));
+
+				trans = new PWTransaction(date,
+						item.getLong(PWParser.API_LIST_AMOUNT),
+						item.getLong(PWParser.API_LIST_BALANCE),
+						item.getString(PWParser.API_LIST_USERNAME));
+
+				mUser.addTransaction(trans);
+			}
+		}
+		catch (Exception e) {
+			PWLog.error("pwstate failed on extractInfo json");
+			return -1;
+		}
+
+		return 0;
+	}
+
 	class ProcessingTask extends TimerTask {
 		@Override
 		public void run() {
@@ -107,6 +142,10 @@ public class PWState implements PWParser.PWParserInterface {
 					case STATE_LOGGEDIN:
 					case STATE_REGISTERED:
 						PWParser.getInstance().info(mUser);
+						break;
+
+					case STATE_LIST:
+						PWParser.getInstance().list(mUser);
 						break;
 
 					case STATE_READY:

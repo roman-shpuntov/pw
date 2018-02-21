@@ -18,6 +18,7 @@ public class PWParser implements PWConnection.PWConnectionInterface {
 		void onResponseRegister(String result);
 		void onResponseLogin(String result);
 		void onResponseInfo(String result);
+		void onResponseList(String result);
 	}
 
 	public static final String		API_TOKEN			= "id_token";
@@ -25,6 +26,11 @@ public class PWParser implements PWConnection.PWConnectionInterface {
 	public static final String		API_INFO_NAME		= "name";
 	public static final String		API_INFO_EMAIL		= "email";
 	public static final String		API_INFO_BALANCE	= "balance";
+	public static final String		API_LIST_TRANS		= "trans_token";
+	public static final String		API_LIST_DATE		= "date";
+	public static final String		API_LIST_USERNAME	= "username";
+	public static final String		API_LIST_AMOUNT		= "amount";
+	public static final String		API_LIST_BALANCE	= "balance";
 
 	private	static final String		API_BASE_URL		= "http://193.124.114.46:3001";
 	private	static final String		API_REGISTER		= "/users";
@@ -74,8 +80,14 @@ public class PWParser implements PWConnection.PWConnectionInterface {
 			}
 			break;
 
-			case REQUEST_LIST:
-				break;
+			case REQUEST_LIST: {
+				ListIterator<PWParserInterface> itr = mListeners.listIterator();
+				while (itr.hasNext()) {
+					PWParserInterface iface = itr.next();
+					iface.onResponseList(result);
+				}
+			}
+			break;
 
 			case REQUEST_TRANSACTION:
 				break;
@@ -178,6 +190,18 @@ public class PWParser implements PWConnection.PWConnectionInterface {
 
 		mRequest = REQUEST_INFO;
 		int rc = PWConnection.getInstance().send(PWConnection.TYPE_GET, API_BASE_URL + API_INFO, "", AUTHORIZATION, BEARER + " " + user.getToken());
+		if (rc != 0)
+			mRequest = REQUEST_NONE;
+
+		return rc;
+	}
+
+	public int list(PWUser user) {
+		if (isBusy())
+			return -1;
+
+		mRequest = REQUEST_LIST;
+		int rc = PWConnection.getInstance().send(PWConnection.TYPE_GET, API_BASE_URL + API_LIST, "", AUTHORIZATION, BEARER + " " + user.getToken());
 		if (rc != 0)
 			mRequest = REQUEST_NONE;
 

@@ -1,38 +1,31 @@
 package parrotwings.com.parrotwings.PWUtil;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Created by roman on 21.02.2018.
  */
 
 public class PWUser {
-	private	String		mName;
-	private	String		mPassword;
-	private	String		mEmail;
-	private	String		mToken;
-	private long		mBalance;
+	private	String				mName = "";
+	private	String				mPassword = "";
+	private	String				mEmail = "";
+	private	String				mToken = "";
+	private long				mBalance = 0;
+	private List<PWTransaction>	mTrans = new ArrayList<>();;
 
-	public PWUser() {
-		mName		= "";
-		mPassword	= "";
-		mEmail		= "";
-		mToken		= "";
-		mBalance	= 0;
-	}
+	public PWUser() {}
 
 	public PWUser(String name, String email, String password) {
 		mName		= name;
 		mPassword	= password;
 		mEmail		= email;
-		mToken		= "";
-		mBalance	= 0;
 	}
 
 	public PWUser(String email, String password) {
-		mName		= "";
 		mPassword	= password;
 		mEmail		= email;
-		mToken		= "";
-		mBalance	= 0;
 	}
 
 	public void setToken(String token) {
@@ -65,5 +58,13 @@ public class PWUser {
 
 	public long getBalance() {
 		return mBalance;
+	}
+
+	public void addTransaction(PWTransaction trans) {
+		mTrans.add(trans);
+	}
+
+	public List<PWTransaction> getTransactions() {
+		return mTrans;
 	}
 }

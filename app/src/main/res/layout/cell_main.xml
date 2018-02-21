@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content">
+
+	<TextView
+		android:id="@+id/mcell_user"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_marginTop="8dp"
+		android:layout_marginLeft="8dp"
+		android:text="user name"
+		android:textSize="16sp"
+		android:textColor="@android:color/black"
+		/>
+
+	<TextView
+		android:id="@+id/mcell_date"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_alignStart="@+id/mcell_user"
+		android:layout_alignTop="@+id/mcell_user"
+		android:layout_marginTop="32dp"
+		android:layout_marginBottom="80dp"
+		android:text="2018/01/01 12:12:12"
+		android:textColor="@android:color/darker_gray"
+		android:textSize="12sp"/>
+
+	<TextView
+		android:id="@+id/mcell_amount"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_alignBaseline="@+id/mcell_user"
+		android:layout_alignBottom="@+id/mcell_user"
+		android:layout_alignParentEnd="true"
+		android:layout_marginEnd="8dp"
+		android:text="Amount: -100"
+		android:textColor="@android:color/holo_red_dark"
+		android:textSize="16sp"/>
+
+	<TextView
+		android:id="@+id/mcell_balance"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_alignBaseline="@+id/mcell_date"
+		android:layout_alignBottom="@+id/mcell_date"
+		android:layout_alignParentEnd="true"
+		android:layout_marginEnd="8dp"
+		android:text="Balance: 100"
+		android:textColor="@android:color/holo_purple"
+		android:textSize="16sp"/>
+
+</RelativeLayout>
