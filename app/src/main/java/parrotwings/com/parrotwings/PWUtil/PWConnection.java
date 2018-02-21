@@ -38,7 +38,7 @@ import javax.net.ssl.HttpsURLConnection;
 
 public class PWConnection {
 	public interface PWConnectionInterface {
-		void pwConnectionRecv(String result);
+		void onRecv(String result);
 	}
 
 	private static volatile PWConnection	mInstance;
@@ -71,12 +71,12 @@ public class PWConnection {
 		return mInstance;
 	}
 
-	public void addListener(PWConnectionInterface ecnotitem) {
-		mListeners.add(ecnotitem);
+	public void addListener(PWConnectionInterface listener) {
+		mListeners.add(listener);
 	}
 
-	public void removeListener(PWConnectionInterface ecnotitem) {
-		mListeners.remove(ecnotitem);
+	public void removeListener(PWConnectionInterface listener) {
+		mListeners.remove(listener);
 	}
 
 	private static String convertInputStreamToString(InputStream inputStream) throws IOException{
@@ -172,7 +172,7 @@ public class PWConnection {
 			ListIterator<PWConnectionInterface> itr = mListeners.listIterator();
 			while (itr.hasNext()) {
 				PWConnectionInterface iface = itr.next();
-				iface.pwConnectionRecv(result);
+				iface.onRecv(result);
 			}
 		}
 	}

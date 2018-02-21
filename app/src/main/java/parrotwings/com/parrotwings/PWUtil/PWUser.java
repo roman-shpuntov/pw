@@ -10,6 +10,13 @@ public class PWUser {
 	private	String		mEmail;
 	private	String		mToken;
 
+	public PWUser() {
+		mName		= "";
+		mPassword	= "";
+		mEmail		= "";
+		mToken		= "";
+	}
+
 	public PWUser(String name, String password, String email) {
 		mName		= name;
 		mPassword	= password;
