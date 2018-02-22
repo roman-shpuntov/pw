@@ -8,17 +8,20 @@
 		  android:title="New transaction"
 		  app:showAsAction="never"/>
 
-	<item android:id="@+id/mitem_date"
-		  android:title="Sort by date"
-		  app:showAsAction="never"/>
+	<group android:checkableBehavior="single">
+		<item android:id="@+id/mitem_date"
+			  android:checked="true"
+			  android:title="Sort by date"
+			  app:showAsAction="never"/>
 
-	<item android:id="@+id/mitem_name"
-		  android:title="Sort by name"
-		  app:showAsAction="never"/>
+		<item android:id="@+id/mitem_name"
+			  android:title="Sort by name"
+			  app:showAsAction="never"/>
 
-	<item android:id="@+id/mitem_amount"
-		  android:title="Sort by amount"
-		  app:showAsAction="never"/>
+		<item android:id="@+id/mitem_amount"
+			  android:title="Sort by amount"
+			  app:showAsAction="never"/>
+	</group>
 
 	<item android:id="@+id/mitem_logout"
 		  android:title="Logout"

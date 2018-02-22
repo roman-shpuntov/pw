@@ -303,18 +303,10 @@ public class PWState implements PWParser.PWParserInterface {
 	}
 
 	private PWState() {
-		mErrors = new ArrayList<>();
-		mOldState = STATE_NONE;
-		mNewState = STATE_NONE;
-		mUser = new PWUser();
+		logout();
+
 		mListeners = new LinkedList<>();
-		mInTransList = new ArrayList<>();
-		mOutTransList = new ArrayList<>();
-
 		PWParser.getInstance().addListener(this);
-
-		mTimer = new Timer();
-		mTimer.schedule(new ProcessingTask(), 1000, 1000);
 	}
 
 	public static PWState getInstance() {
@@ -339,6 +331,27 @@ public class PWState implements PWParser.PWParserInterface {
 
 	public void removeListener(PWStateInterface listener) {
 		mListeners.remove(listener);
+	}
+
+	public void logout() {
+		PWParser.getInstance().logout();
+
+		if (mTimer != null) {
+			mTimer.cancel();
+			mTimer.purge();
+			mTimer = null;
+		}
+
+		mErrors = new ArrayList<>();
+		mOldState = STATE_NONE;
+		mNewState = STATE_NONE;
+		mUser = new PWUser();
+
+		mInTransList = new ArrayList<>();
+		mOutTransList = new ArrayList<>();
+
+		mTimer = new Timer();
+		mTimer.schedule(new ProcessingTask(), 1000, 1000);
 	}
 
 	public int register(String name, String email, String password) {

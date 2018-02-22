@@ -61,8 +61,6 @@ public class PWParser implements PWConnection.PWConnectionInterface {
 	private	static final int		REQUEST_INFO		= 5;
 	private	static final int		REQUEST_FILTER		= 6;
 
-	private	static final int		API_REGISTER_BADREQUEST	=	400;
-
 	private static volatile PWParser	mInstance;
 	private List<PWParserInterface>		mListeners;
 	private int							mRequest;
@@ -248,5 +246,9 @@ public class PWParser implements PWConnection.PWConnectionInterface {
 			mRequest = REQUEST_NONE;
 
 		return rc;
+	}
+
+	public void logout() {
+		mRequest = REQUEST_NONE;
 	}
 }

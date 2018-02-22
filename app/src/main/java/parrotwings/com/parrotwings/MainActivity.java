@@ -3,6 +3,7 @@ package parrotwings.com.parrotwings;
 import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.Toolbar;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -79,6 +80,8 @@ public class MainActivity extends AppCompatActivity implements PWState.PWStateIn
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 
+		setSupportActionBar((Toolbar) findViewById(R.id.main_toolbar));
+
 		mName		= findViewById(R.id.main_user);
 		mBalance	= findViewById(R.id.main_balance);
 		mList		= findViewById(R.id.main_list);
@@ -97,6 +100,7 @@ public class MainActivity extends AppCompatActivity implements PWState.PWStateIn
 		super.onDestroy();
 
 		PWState.getInstance().removeListener(this);
+		PWState.getInstance().logout();
 	}
 
 	@Override
@@ -116,6 +120,7 @@ public class MainActivity extends AppCompatActivity implements PWState.PWStateIn
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		int id = item.getItemId();
+
 		switch (id) {
 			case R.id.mitem_trans: {
 				Intent intent = new Intent(this, TransactionActivity.class);
@@ -124,16 +129,19 @@ public class MainActivity extends AppCompatActivity implements PWState.PWStateIn
 			}
 
 			case R.id.mitem_date:
+				item.setChecked(true);
 				PWState.getInstance().getUser().sortTransactionsByDate();
 				mAdapter.notifyDataSetChanged();
 				return true;
 
 			case R.id.mitem_name:
+				item.setChecked(true);
 				PWState.getInstance().getUser().sortTransactionsByName();
 				mAdapter.notifyDataSetChanged();
 				return true;
 
 			case R.id.mitem_amount:
+				item.setChecked(true);
 				PWState.getInstance().getUser().sortTransactionsByAmount();
 				mAdapter.notifyDataSetChanged();
 				return true;
