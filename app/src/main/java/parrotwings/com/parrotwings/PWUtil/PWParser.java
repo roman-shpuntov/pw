@@ -12,11 +12,11 @@ import java.util.ListIterator;
 
 public class PWParser implements PWConnection.PWConnectionInterface {
 	public interface PWParserInterface {
-		void onResponseRegister(String result);
-		void onResponseLogin(String result);
-		void onResponseInfo(String result);
-		void onResponseList(String result);
-		void onResponseTransaction(String result);
+		void onResponseRegister(PWError result);
+		void onResponseLogin(PWError result);
+		void onResponseInfo(PWError result);
+		void onResponseList(PWError result);
+		void onResponseTransaction(PWError result);
 	}
 
 	public static final String		API_TOKEN			= "id_token";
@@ -61,13 +61,15 @@ public class PWParser implements PWConnection.PWConnectionInterface {
 	private	static final int		REQUEST_INFO		= 5;
 	private	static final int		REQUEST_FILTER		= 6;
 
+	private	static final int		API_REGISTER_BADREQUEST	=	400;
+
 	private static volatile PWParser	mInstance;
 	private List<PWParserInterface>		mListeners;
 	private int							mRequest;
 
 	@Override
-	public void onRecv(String result) {
-		PWLog.debug("pwparser recv result " + result + " request " + mRequest);
+	public void onRecv(PWError result) {
+		PWLog.debug("pwparser recv result code " + result.getCode() + " description " + result.getDescription() + " request " + mRequest);
 
 		switch (mRequest) {
 			case REQUEST_REGISTER: {

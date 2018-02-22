@@ -3,14 +3,13 @@ package parrotwings.com.parrotwings;
 import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.TextView;
 import android.widget.Toast;
 
-import parrotwings.com.parrotwings.PWUtil.PWState;
-import parrotwings.com.parrotwings.PWUtil.PWTransaction;
+import parrotwings.com.parrotwings.PWUtil.*;
 
 public class RegisterActivity extends AppCompatActivity implements PWState.PWStateInterface {
 	private EditText	mEmail;
@@ -32,7 +31,17 @@ public class RegisterActivity extends AppCompatActivity implements PWState.PWSta
 	}
 
 	@Override
-	public void onError() {}
+	public void onError(final PWError error) {
+		runOnUiThread(new Runnable() {
+			@Override
+			public void run() {
+				Toast toast = Toast.makeText(RegisterActivity.this,
+						error.getDescription(), Toast.LENGTH_LONG);
+				toast.setGravity(Gravity.TOP | Gravity.CENTER_HORIZONTAL, 0, 0);
+				toast.show();
+			}
+		});
+	}
 
 	@Override
 	public void onInTransaction(PWTransaction trans) {}

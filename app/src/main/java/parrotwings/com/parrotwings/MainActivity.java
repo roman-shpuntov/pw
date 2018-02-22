@@ -11,15 +11,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-
-import parrotwings.com.parrotwings.PWUtil.PWConnection;
-import parrotwings.com.parrotwings.PWUtil.PWParser;
-import parrotwings.com.parrotwings.PWUtil.PWState;
-import parrotwings.com.parrotwings.PWUtil.PWTransaction;
-import parrotwings.com.parrotwings.PWUtil.PWUser;
+import parrotwings.com.parrotwings.PWUtil.*;
 
 public class MainActivity extends AppCompatActivity implements PWState.PWStateInterface {
 	private TextView		mName;
@@ -31,7 +23,17 @@ public class MainActivity extends AppCompatActivity implements PWState.PWStateIn
 	public void onReady() {}
 
 	@Override
-	public void onError() {}
+	public void onError(final PWError error) {
+		runOnUiThread(new Runnable() {
+			@Override
+			public void run() {
+				Toast toast = Toast.makeText(MainActivity.this,
+						error.getDescription(), Toast.LENGTH_LONG);
+				toast.setGravity(Gravity.TOP | Gravity.CENTER_HORIZONTAL, 0, 0);
+				toast.show();
+			}
+		});
+	}
 
 	@Override
 	public void onInTransaction(final PWTransaction trans) {
@@ -41,7 +43,7 @@ public class MainActivity extends AppCompatActivity implements PWState.PWStateIn
 				Toast toast = Toast.makeText(MainActivity.this,
 						"Incoming transaction from user: '" + trans.getUserName() + "'. Now your balance: " + trans.getBalance(),
 						Toast.LENGTH_LONG);
-				toast.setGravity(Gravity.TOP| Gravity.CENTER_HORIZONTAL, 0, 0);
+				toast.setGravity(Gravity.TOP | Gravity.CENTER_HORIZONTAL, 0, 0);
 				toast.show();
 
 				updateInfo();

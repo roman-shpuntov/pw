@@ -1,19 +1,16 @@
 package parrotwings.com.parrotwings;
 
-import android.app.Activity;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
-import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
 
-import parrotwings.com.parrotwings.PWUtil.PWState;
-import parrotwings.com.parrotwings.PWUtil.PWTransaction;
+import parrotwings.com.parrotwings.PWUtil.*;
 
 public class TransactionActivity extends AppCompatActivity {
 	private EditText			mUser;

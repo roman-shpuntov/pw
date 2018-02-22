@@ -11,7 +11,6 @@ import java.util.ListIterator;
 import java.util.Timer;
 import java.util.TimerTask;
 
-
 /**
  * Created by roman on 21.02.2018.
  */
@@ -19,7 +18,7 @@ import java.util.TimerTask;
 public class PWState implements PWParser.PWParserInterface {
 	public interface PWStateInterface {
 		void onReady();
-		void onError();
+		void onError(PWError error);
 		void onInTransaction(PWTransaction trans);
 		void onOutTransaction(PWTransaction trans);
 	}
@@ -38,35 +37,79 @@ public class PWState implements PWParser.PWParserInterface {
 	private Timer						mTimer;
 	private List<PWTransaction>			mOutTransList;
 	private List<PWTransaction>			mInTransList;
-	private int							mErrors;
+	private List<PWError>				mErrors;
 
 	@Override
-	public void onResponseRegister(String result) {
-		if (extractToken(result) == 0)
+	public void onResponseRegister(PWError result) {
+		if (!result.isSuccess()) {
+			mErrors.add(result);
+			return;
+		}
+
+		if (extractToken(result.getDescription()) == 0) {
 			mNewState = STATE_REGISTERED;
+			return;
+		}
+
+		mErrors.add(new PWError(PWError.GENERAL_ERROR, PWError.GENERAL_ERROR_DESC));
 	}
 
 	@Override
-	public void onResponseLogin(String result) {
-		if (extractToken(result) == 0)
+	public void onResponseLogin(PWError result) {
+		if (!result.isSuccess()) {
+			mErrors.add(result);
+			return;
+		}
+
+		if (extractToken(result.getDescription()) == 0) {
 			mNewState = STATE_LOGGEDIN;
+			return;
+		}
+
+		mErrors.add(new PWError(PWError.GENERAL_ERROR, PWError.GENERAL_ERROR_DESC));
 	}
 
 	@Override
-	public void onResponseInfo(String result) {
-		if (extractInfo(result) == 0)
+	public void onResponseInfo(PWError result) {
+		if (!result.isSuccess()) {
+			mErrors.add(result);
+			return;
+		}
+
+		if (extractInfo(result.getDescription()) == 0) {
 			mNewState = STATE_LIST;
+			return;
+		}
+
+		mErrors.add(new PWError(PWError.GENERAL_ERROR, PWError.GENERAL_ERROR_DESC));
 	}
 
 	@Override
-	public void onResponseList(String result) {
-		if (extractList(result) == 0)
+	public void onResponseList(PWError result) {
+		if (!result.isSuccess()) {
+			mErrors.add(result);
+			return;
+		}
+
+		if (extractList(result.getDescription()) == 0) {
 			mNewState = STATE_READY;
+			return;
+		}
+
+		mErrors.add(new PWError(PWError.GENERAL_ERROR, PWError.GENERAL_ERROR_DESC));
 	}
 
 	@Override
-	public void onResponseTransaction(String result) {
-		extractTransaction(result);
+	public void onResponseTransaction(PWError result) {
+		if (!result.isSuccess()) {
+			mErrors.add(result);
+			return;
+		}
+
+		if (extractTransaction(result.getDescription()) == 0)
+			return;
+
+		mErrors.add(new PWError(PWError.GENERAL_ERROR, PWError.GENERAL_ERROR_DESC));
 	}
 
 	private int extractToken(String result) {
@@ -81,8 +124,9 @@ public class PWState implements PWParser.PWParserInterface {
 			return -1;
 		}
 
-		if (token == null)
+		if (token == null) {
 			return -1;
+		}
 
 		mUser.setToken(token);
 		return 0;
@@ -195,15 +239,14 @@ public class PWState implements PWParser.PWParserInterface {
 	class ProcessingTask extends TimerTask {
 		@Override
 		public void run() {
-			if (mErrors != 0) {
-				mErrors = 0;
-
+			for (PWError error : mErrors) {
 				ListIterator<PWStateInterface> itr = mListeners.listIterator();
 				while (itr.hasNext()) {
 					PWStateInterface iface = itr.next();
-					iface.onError();
+					iface.onError(error);
 				}
 			}
+			mErrors.clear();
 
 			if (mNewState != mOldState) {
 				mOldState = mNewState;
@@ -260,7 +303,7 @@ public class PWState implements PWParser.PWParserInterface {
 	}
 
 	private PWState() {
-		mErrors = 0;
+		mErrors = new ArrayList<>();
 		mOldState = STATE_NONE;
 		mNewState = STATE_NONE;
 		mUser = new PWUser();

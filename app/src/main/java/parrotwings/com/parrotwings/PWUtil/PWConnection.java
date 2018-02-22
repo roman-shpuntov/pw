@@ -23,7 +23,7 @@ import java.util.ListIterator;
 
 public class PWConnection {
 	public interface PWConnectionInterface {
-		void onRecv(String result);
+		void onRecv(PWError result);
 	}
 
 	private static volatile PWConnection	mInstance;
@@ -75,9 +75,10 @@ public class PWConnection {
 		return result;
 	}
 
-	private String postRequest(String url, String payload, String... header) {
+	private PWError postRequest(String url, String payload, String... header) {
 		InputStream inputStream;
-		String result = "";
+		String result = PWError.GENERAL_ERROR_DESC;
+		int code = PWError.GENERAL_ERROR;
 		try {
 			HttpPost request = new HttpPost(url);
 			StringEntity se = new StringEntity(payload);
@@ -93,17 +94,18 @@ public class PWConnection {
 			inputStream = response.getEntity().getContent();
 			if (inputStream != null)
 				result = convertInputStreamToString(inputStream);
-
+			code = response.getStatusLine().getStatusCode();
 		} catch (Exception e) {
 			PWLog.error("pwconnection failed on post" + e.getLocalizedMessage());
 		}
 
-		return result;
+		return new PWError(code, result);
 	}
 
-	private String getRequest(String url, String... header) {
+	private PWError getRequest(String url, String... header) {
 		InputStream inputStream;
-		String result = "";
+		String result = PWError.GENERAL_ERROR_DESC;
+		int code = PWError.GENERAL_ERROR;
 		try {
 			HttpGet request = new HttpGet(url);
 
@@ -117,17 +119,17 @@ public class PWConnection {
 			inputStream = response.getEntity().getContent();
 			if (inputStream != null)
 				result = convertInputStreamToString(inputStream);
-
+			code = response.getStatusLine().getStatusCode();
 		} catch (Exception e) {
 			PWLog.error("pwconnection failed on post" + e.getLocalizedMessage());
 		}
 
-		return result;
+		return new PWError(code, result);
 	}
 
-	private class HttpAsyncTask extends AsyncTask<String, Void, String> {
+	private class HttpAsyncTask extends AsyncTask<String, Void, PWError> {
 		@Override
-		protected String doInBackground(String... urls) {
+		protected PWError doInBackground(String... urls) {
 			String[]	header = null;
 			if (urls.length > POSITION_HEADER) {
 				int	count = urls.length - POSITION_HEADER;
@@ -147,11 +149,11 @@ public class PWConnection {
 			else if (type.compareTo(TYPE_GET) == 0)
 				return getRequest(url, header);
 
-			return "";
+			return new PWError(PWError.GENERAL_ERROR, PWError.GENERAL_ERROR_DESC);
 		}
 
 		@Override
-		protected void onPostExecute(String result) {
+		protected void onPostExecute(PWError result) {
 			PWLog.debug("pwconnection result " + result);
 
 			ListIterator<PWConnectionInterface> itr = mListeners.listIterator();
