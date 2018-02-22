@@ -15,39 +15,12 @@ import android.widget.Toast;
 import parrotwings.com.parrotwings.PWUtil.PWState;
 import parrotwings.com.parrotwings.PWUtil.PWTransaction;
 
-public class TransactionActivity extends AppCompatActivity implements PWState.PWStateInterface {
+public class TransactionActivity extends AppCompatActivity {
 	private EditText			mUser;
 	private EditText			mAmount;
 	private ListView			mList;
 	private Button				mSend;
 	private TransactionAdapter	mAdapter;
-
-	@Override
-	public void onReady() {}
-
-	@Override
-	public void onInTransaction(PWTransaction trans) {
-
-	}
-
-	@Override
-	public void onOutTransaction(final PWTransaction trans) {
-		runOnUiThread(new Runnable() {
-			@Override
-			public void run() {
-				hideKeyboard(TransactionActivity.this.getWindow().getDecorView().findViewById(android.R.id.content));
-
-				Toast.makeText(TransactionActivity.this,
-						"Complete transaction for user: '" + trans.getUserName() + "'. Now your balance: " + trans.getBalance(),
-						Toast.LENGTH_LONG).show();
-			}
-		});
-	}
-
-	private void hideKeyboard(View view) {
-		InputMethodManager inputMethodManager =(InputMethodManager)getSystemService(Activity.INPUT_METHOD_SERVICE);
-		inputMethodManager.hideSoftInputFromWindow(view.getWindowToken(), 0);
-	}
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -80,10 +53,24 @@ public class TransactionActivity extends AppCompatActivity implements PWState.PW
 		mSend.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View view) {
-				long amount = Long.parseLong(mAmount.getText().toString());
+				String samount = mAmount.getText().toString();
+				long amount = 0;
+
+				try {
+					amount = Long.parseLong(samount);
+				} catch (NumberFormatException e) {
+					Toast.makeText(TransactionActivity.this, "Please provide correct amount value.", Toast.LENGTH_LONG).show();
+					return;
+				}
+
 				long balance = PWState.getInstance().getUser().getBalance();
 				if (balance < amount) {
 					Toast.makeText(TransactionActivity.this, "Insufficient funds on your account. Please change your amount and try again", Toast.LENGTH_LONG).show();
+					return;
+				}
+
+				if (amount < 0) {
+					Toast.makeText(TransactionActivity.this, "Please provide correct amount value.", Toast.LENGTH_LONG).show();
 					return;
 				}
 
@@ -92,14 +79,5 @@ public class TransactionActivity extends AppCompatActivity implements PWState.PW
 					Toast.makeText(TransactionActivity.this, "Something wrong on transaction. Please try again later", Toast.LENGTH_LONG).show();
 			}
 		});
-
-		PWState.getInstance().addListener(this);
-	}
-
-	@Override
-	protected void onDestroy() {
-		super.onDestroy();
-
-		PWState.getInstance().removeListener(this);
 	}
 }

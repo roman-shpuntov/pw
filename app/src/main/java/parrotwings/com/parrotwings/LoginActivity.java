@@ -31,6 +31,9 @@ public class LoginActivity extends AppCompatActivity implements PWState.PWStateI
 	}
 
 	@Override
+	public void onError() {}
+
+	@Override
 	public void onInTransaction(PWTransaction trans) {}
 
 	@Override

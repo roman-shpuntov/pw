@@ -1,8 +1,5 @@
 package parrotwings.com.parrotwings.PWUtil;
 
-import android.util.PrintWriterPrinter;
-
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.json.JSONObject;
 
 import java.util.LinkedList;
@@ -30,12 +27,14 @@ public class PWParser implements PWConnection.PWConnectionInterface {
 	public static final String		API_INFO_BALANCE	= "balance";
 
 	public static final String		API_LIST_TOKEN		= "trans_token";
+	public static final String		API_LIST_ID			= "id";
 	public static final String		API_LIST_DATE		= "date";
 	public static final String		API_LIST_USERNAME	= "username";
 	public static final String		API_LIST_AMOUNT		= "amount";
 	public static final String		API_LIST_BALANCE	= "balance";
 
 	public static final String		API_TRANS_TOKEN		= "trans_token";
+	public static final String		API_TRANS_ID		= "id";
 	public static final String		API_TRANS_DATE		= "date";
 	public static final String		API_TRANS_USERNAME	= "username";
 	public static final String		API_TRANS_AMOUNT	= "amount";

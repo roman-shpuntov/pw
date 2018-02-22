@@ -51,8 +51,8 @@ public class MainAdapter extends ArrayAdapter<PWTransaction> {
 		DateFormat	format = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 		viewHolder.user.setText(tr.getUserName());
 		viewHolder.date.setText(format.format(tr.getDate()));
-		viewHolder.amount.setText(String.valueOf(tr.getAmount()));
-		viewHolder.balance.setText(String.valueOf(tr.getBalance()));
+		viewHolder.amount.setText("Amount: " + String.valueOf(tr.getAmount()));
+		viewHolder.balance.setText("Balance: " + String.valueOf(tr.getBalance()));
 
 		if (tr.getAmount() > 0)
 			viewHolder.amount.setTextColor(view.getResources().getColor(android.R.color.holo_green_dark));

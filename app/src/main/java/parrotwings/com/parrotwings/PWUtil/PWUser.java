@@ -11,12 +11,12 @@ import java.util.List;
  */
 
 public class PWUser {
-	private	String				mName = "";
-	private	String				mPassword = "";
-	private	String				mEmail = "";
-	private	String				mToken = "";
-	private long				mBalance = 0;
-	private List<PWTransaction>	mTrans = new ArrayList<>();;
+	private	String						mName = "";
+	private	String						mPassword = "";
+	private	String						mEmail = "";
+	private	String						mToken = "";
+	private long						mBalance = 0;
+	private List<PWTransaction>			mTrans = new ArrayList<>();
 
 	private	Comparator<PWTransaction>	mDateComparator = new Comparator<PWTransaction>() {
 		public int compare(PWTransaction obj1, PWTransaction obj2) {
@@ -40,6 +40,8 @@ public class PWUser {
 			return 0;
 		}
 	};
+
+	private	Comparator<PWTransaction>	mComparator = mDateComparator;
 
 	public PWUser() {}
 
@@ -86,8 +88,32 @@ public class PWUser {
 		return mBalance;
 	}
 
-	public void addTransaction(PWTransaction trans) {
-		mTrans.add(trans);
+	public List<PWTransaction> syncTransactions(List<PWTransaction> trans) {
+		List<PWTransaction>	itrans = new ArrayList<>();
+		long count = 0;
+
+		for (PWTransaction t : trans) {
+			long id = t.getID();
+			boolean find = false;
+			for (PWTransaction etrans : mTrans) {
+				if (id == etrans.getID()) {
+					find = true;
+					count++;
+					break;
+				}
+			}
+
+			if (!find) {
+				mTrans.add(t);
+				if (t.getAmount() > 0)
+					itrans.add(t);
+			}
+		}
+
+		if (count != 0)
+			Collections.sort(mTrans, mComparator);
+
+		return itrans;
 	}
 
 	public List<PWTransaction> getTransactions() {
@@ -95,14 +121,17 @@ public class PWUser {
 	}
 
 	public void sortTransactionsByDate() {
+		mComparator = mDateComparator;
 		Collections.sort(mTrans, mDateComparator);
 	}
 
 	public void sortTransactionsByName() {
+		mComparator = mNameComparator;
 		Collections.sort(mTrans, mNameComparator);
 	}
 
 	public void sortTransactionsByAmount() {
+		mComparator = mAmountComparator;
 		Collections.sort(mTrans, mAmountComparator);
 	}
 
@@ -112,7 +141,7 @@ public class PWUser {
 		for (PWTransaction trans : mTrans)
 			users.add(trans.getUserName());
 
-		HashSet<String> hashSet = new HashSet<String>();
+		HashSet<String> hashSet = new HashSet<>();
 		hashSet.addAll(users);
 
 		users.clear();

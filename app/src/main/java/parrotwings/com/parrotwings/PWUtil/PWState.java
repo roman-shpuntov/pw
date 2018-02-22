@@ -19,6 +19,7 @@ import java.util.TimerTask;
 public class PWState implements PWParser.PWParserInterface {
 	public interface PWStateInterface {
 		void onReady();
+		void onError();
 		void onInTransaction(PWTransaction trans);
 		void onOutTransaction(PWTransaction trans);
 	}
@@ -35,7 +36,9 @@ public class PWState implements PWParser.PWParserInterface {
 	private int							mOldState;
 	private int							mNewState;
 	private Timer						mTimer;
-	private ArrayList<PWTransaction>	mOutTransList;
+	private List<PWTransaction>			mOutTransList;
+	private List<PWTransaction>			mInTransList;
+	private int							mErrors;
 
 	@Override
 	public void onResponseRegister(String result) {
@@ -115,7 +118,8 @@ public class PWState implements PWParser.PWParserInterface {
 	}
 
 	private int extractList(String result) {
-		PWTransaction	trans	= null;
+		PWTransaction		trans = null;
+		List<PWTransaction>	xtrans = new ArrayList<>();
 
 		try {
 			JSONObject object = new JSONObject(result);
@@ -124,17 +128,31 @@ public class PWState implements PWParser.PWParserInterface {
 				JSONObject	item = list.getJSONObject(i);
 				Date		date = new Date(item.getString(PWParser.API_LIST_DATE));
 
-				trans = new PWTransaction(date,
+				trans = new PWTransaction(
+						item.getLong(PWParser.API_LIST_ID), date,
 						item.getLong(PWParser.API_LIST_AMOUNT),
 						item.getLong(PWParser.API_LIST_BALANCE),
 						item.getString(PWParser.API_LIST_USERNAME));
 
-				mUser.addTransaction(trans);
+				xtrans.add(trans);
 			}
 		}
 		catch (Exception e) {
 			PWLog.error("pwstate failed on extractList json");
 			return -1;
+		}
+
+		List<PWTransaction>	itrans = mUser.syncTransactions(xtrans);
+		if (mNewState == STATE_READY) {
+			if (itrans.size() != 0) {
+				mInTransList.addAll(itrans);
+
+				long balance = 0;
+				for (PWTransaction t : itrans)
+					balance += t.getBalance();
+
+				mUser.setBalance(balance);
+			}
 		}
 
 		return 0;
@@ -143,6 +161,7 @@ public class PWState implements PWParser.PWParserInterface {
 	private int extractTransaction(String result) {
 		long balance	= 0;
 		long amount		= 0;
+		long id			= 0;
 		String name		= null;
 		Date date		= null;
 
@@ -153,9 +172,10 @@ public class PWState implements PWParser.PWParserInterface {
 			name = tok.getString(PWParser.API_TRANS_USERNAME);
 			balance = tok.getLong(PWParser.API_TRANS_BALANCE);
 			amount = tok.getLong(PWParser.API_TRANS_AMOUNT);
+			id = tok.getLong(PWParser.API_TRANS_ID);
 
-			PWTransaction trans = new PWTransaction(date,
-					amount, balance, name);
+			PWTransaction trans = new PWTransaction(
+					id, date, amount, balance, name);
 
 			mOutTransList.add(trans);
 		}
@@ -175,6 +195,16 @@ public class PWState implements PWParser.PWParserInterface {
 	class ProcessingTask extends TimerTask {
 		@Override
 		public void run() {
+			if (mErrors != 0) {
+				mErrors = 0;
+
+				ListIterator<PWStateInterface> itr = mListeners.listIterator();
+				while (itr.hasNext()) {
+					PWStateInterface iface = itr.next();
+					iface.onError();
+				}
+			}
+
 			if (mNewState != mOldState) {
 				mOldState = mNewState;
 
@@ -201,24 +231,41 @@ public class PWState implements PWParser.PWParserInterface {
 				}
 			}
 
-			if ((mNewState == STATE_READY) && mOutTransList.size() != 0) {
-				PWTransaction	trans = mOutTransList.get(0);
-				mOutTransList.remove(0);
+			if (mNewState == STATE_READY) {
+				if (mOutTransList.size() != 0) {
+					PWTransaction trans = mOutTransList.get(0);
+					mOutTransList.remove(0);
 
-				ListIterator<PWStateInterface> itr = mListeners.listIterator();
-				while (itr.hasNext()) {
-					PWStateInterface iface = itr.next();
-					iface.onOutTransaction(trans);
+					ListIterator<PWStateInterface> itr = mListeners.listIterator();
+					while (itr.hasNext()) {
+						PWStateInterface iface = itr.next();
+						iface.onOutTransaction(trans);
+					}
 				}
+
+				if (mInTransList.size() != 0) {
+					PWTransaction trans = mInTransList.get(0);
+					mInTransList.remove(0);
+
+					ListIterator<PWStateInterface> itr = mListeners.listIterator();
+					while (itr.hasNext()) {
+						PWStateInterface iface = itr.next();
+						iface.onInTransaction(trans);
+					}
+				}
+
+				PWParser.getInstance().list(mUser);
 			}
 		}
 	}
 
 	private PWState() {
+		mErrors = 0;
 		mOldState = STATE_NONE;
 		mNewState = STATE_NONE;
 		mUser = new PWUser();
 		mListeners = new LinkedList<>();
+		mInTransList = new ArrayList<>();
 		mOutTransList = new ArrayList<>();
 
 		PWParser.getInstance().addListener(this);

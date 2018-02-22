@@ -7,6 +7,7 @@ import java.util.Date;
  */
 
 public class PWTransaction {
+	private long		mID = 0;
 	private Date		mDate = new Date();
 	private long		mAmount = 0;
 	private long		mBalance = 0;
@@ -14,11 +15,16 @@ public class PWTransaction {
 
 	PWTransaction() {}
 
-	PWTransaction(Date date, long amount, long balance, String userName) {
+	PWTransaction(long id, Date date, long amount, long balance, String userName) {
+		mID = id;
 		mDate = date;
 		mAmount = amount;
 		mBalance = balance;
 		mUserName = userName;
+	}
+
+	public long getID() {
+		return mID;
 	}
 
 	public String getUserName() {

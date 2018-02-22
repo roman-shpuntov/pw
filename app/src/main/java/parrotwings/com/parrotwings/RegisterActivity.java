@@ -32,6 +32,9 @@ public class RegisterActivity extends AppCompatActivity implements PWState.PWSta
 	}
 
 	@Override
+	public void onError() {}
+
+	@Override
 	public void onInTransaction(PWTransaction trans) {}
 
 	@Override

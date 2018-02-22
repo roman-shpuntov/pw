@@ -60,7 +60,7 @@
 			android:layout_height="wrap_content"
 			android:ems="10"
 			android:hint="Amount"
-			android:inputType="textPersonName"
+			android:inputType="number"
 			android:text=""
 			app:layout_constraintBottom_toBottomOf="parent"
 			app:layout_constraintEnd_toEndOf="parent"
