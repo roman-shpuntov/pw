@@ -5,27 +5,37 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import parrotwings.com.parrotwings.PWUtil.PWState;
+import parrotwings.com.parrotwings.PWUtil.PWTransaction;
 
 public class RegisterActivity extends AppCompatActivity implements PWState.PWStateInterface {
-	private TextView	mEmail;
-	private TextView	mName;
-	private TextView	mPassword;
+	private EditText	mEmail;
+	private EditText	mName;
+	private EditText	mPassword;
 	private Button		mBack;
 	private Button		mSignup;
 
 	@Override
 	public void onReady() {
-		Intent intent = new Intent(this, MainActivity.class);
-		startActivity(intent);
-		finish();
+		runOnUiThread(new Runnable() {
+			@Override
+			public void run() {
+				Intent intent = new Intent(RegisterActivity.this, MainActivity.class);
+				startActivity(intent);
+				finish();
+			}
+		});
 	}
 
 	@Override
-	public void onIncome() {}
+	public void onInTransaction(PWTransaction trans) {}
+
+	@Override
+	public void onOutTransaction(PWTransaction trans) {}
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {

@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.constraint.ConstraintLayout
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
+	xmlns:tools="http://schemas.android.com/tools"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent"
+	tools:context="parrotwings.com.parrotwings.TransactionActivity">
+
+	<android.support.v7.widget.Toolbar
+		android:id="@+id/trans_toolbar"
+		android:layout_width="match_parent"
+		android:layout_height="?android:attr/actionBarSize"
+		android:background="@color/colorPrimary"
+		app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
+		app:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar">
+
+		<TextView
+			android:id="@+id/trans_title"
+			android:textColor="@android:color/white"
+			android:textAppearance="?android:attr/textAppearanceMedium"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:text="New transaction"
+			android:lines="1"
+			android:singleLine="true"/>
+	</android.support.v7.widget.Toolbar>
+
+	<android.support.constraint.ConstraintLayout
+		android:layout_width="match_parent"
+		android:layout_height="match_parent"
+		android:layout_marginTop="?android:attr/actionBarSize">
+
+		<EditText
+			android:id="@+id/trans_user"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:ems="10"
+			android:hint="User name"
+			android:inputType="textPersonName"
+			android:text=""
+			app:layout_constraintEnd_toEndOf="parent"
+			app:layout_constraintStart_toStartOf="parent"
+			app:layout_constraintTop_toTopOf="parent"/>
+
+		<ListView
+			android:id="@+id/trans_list"
+			android:layout_width="match_parent"
+			android:layout_height="0dp"
+			android:dividerHeight="1dp"
+			android:textColor="@android:color/black"
+			app:layout_constraintBottom_toTopOf="@+id/trans_amount"
+			app:layout_constraintEnd_toEndOf="parent"
+			app:layout_constraintStart_toStartOf="parent"
+			app:layout_constraintTop_toBottomOf="@+id/trans_user"/>
+
+		<EditText
+			android:id="@+id/trans_amount"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:ems="10"
+			android:hint="Amount"
+			android:inputType="textPersonName"
+			android:text=""
+			app:layout_constraintBottom_toBottomOf="parent"
+			app:layout_constraintEnd_toEndOf="parent"
+			app:layout_constraintStart_toStartOf="parent"/>
+
+		<Button
+			android:id="@+id/trans_send"
+			android:layout_width="44dp"
+			android:layout_height="44dp"
+			android:text=">"
+			app:layout_constraintBottom_toBottomOf="parent"
+			app:layout_constraintEnd_toEndOf="parent"/>
+	</android.support.constraint.ConstraintLayout>
+</android.support.constraint.ConstraintLayout>

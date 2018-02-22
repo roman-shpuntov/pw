@@ -19,18 +19,27 @@ public class PWParser implements PWConnection.PWConnectionInterface {
 		void onResponseLogin(String result);
 		void onResponseInfo(String result);
 		void onResponseList(String result);
+		void onResponseTransaction(String result);
 	}
 
 	public static final String		API_TOKEN			= "id_token";
+
 	public static final String		API_INFO_USER		= "user_info_token";
 	public static final String		API_INFO_NAME		= "name";
 	public static final String		API_INFO_EMAIL		= "email";
 	public static final String		API_INFO_BALANCE	= "balance";
-	public static final String		API_LIST_TRANS		= "trans_token";
+
+	public static final String		API_LIST_TOKEN		= "trans_token";
 	public static final String		API_LIST_DATE		= "date";
 	public static final String		API_LIST_USERNAME	= "username";
 	public static final String		API_LIST_AMOUNT		= "amount";
 	public static final String		API_LIST_BALANCE	= "balance";
+
+	public static final String		API_TRANS_TOKEN		= "trans_token";
+	public static final String		API_TRANS_DATE		= "date";
+	public static final String		API_TRANS_USERNAME	= "username";
+	public static final String		API_TRANS_AMOUNT	= "amount";
+	public static final String		API_TRANS_BALANCE	= "balance";
 
 	private	static final String		API_BASE_URL		= "http://193.124.114.46:3001";
 	private	static final String		API_REGISTER		= "/users";
@@ -68,8 +77,8 @@ public class PWParser implements PWConnection.PWConnectionInterface {
 					PWParserInterface iface = itr.next();
 					iface.onResponseRegister(result);
 				}
+				break;
 			}
-			break;
 
 			case REQUEST_LOGIN: {
 				ListIterator<PWParserInterface> itr = mListeners.listIterator();
@@ -77,8 +86,8 @@ public class PWParser implements PWConnection.PWConnectionInterface {
 					PWParserInterface iface = itr.next();
 					iface.onResponseLogin(result);
 				}
+				break;
 			}
-			break;
 
 			case REQUEST_LIST: {
 				ListIterator<PWParserInterface> itr = mListeners.listIterator();
@@ -86,11 +95,17 @@ public class PWParser implements PWConnection.PWConnectionInterface {
 					PWParserInterface iface = itr.next();
 					iface.onResponseList(result);
 				}
-			}
-			break;
-
-			case REQUEST_TRANSACTION:
 				break;
+			}
+
+			case REQUEST_TRANSACTION: {
+				ListIterator<PWParserInterface> itr = mListeners.listIterator();
+				while (itr.hasNext()) {
+					PWParserInterface iface = itr.next();
+					iface.onResponseTransaction(result);
+				}
+				break;
+			}
 
 			case REQUEST_INFO: {
 				ListIterator<PWParserInterface> itr = mListeners.listIterator();
@@ -98,8 +113,8 @@ public class PWParser implements PWConnection.PWConnectionInterface {
 					PWParserInterface iface = itr.next();
 					iface.onResponseInfo(result);
 				}
+				break;
 			}
-			break;
 
 			case REQUEST_FILTER:
 				break;
@@ -156,7 +171,8 @@ public class PWParser implements PWConnection.PWConnectionInterface {
 		}
 
 		mRequest = REQUEST_REGISTER;
-		int rc = PWConnection.getInstance().send(PWConnection.TYPE_POST, API_BASE_URL + API_REGISTER, json.toString(), CONTENT_TYPE, APPLICATION_JSON);
+		int rc = PWConnection.getInstance().send(PWConnection.TYPE_POST, API_BASE_URL + API_REGISTER,
+				json.toString(), CONTENT_TYPE, APPLICATION_JSON);
 		if (rc != 0)
 			mRequest = REQUEST_NONE;
 
@@ -177,7 +193,8 @@ public class PWParser implements PWConnection.PWConnectionInterface {
 		}
 
 		mRequest = REQUEST_LOGIN;
-		int rc = PWConnection.getInstance().send(PWConnection.TYPE_POST, API_BASE_URL + API_LOGIN, json.toString(), CONTENT_TYPE, APPLICATION_JSON);
+		int rc = PWConnection.getInstance().send(PWConnection.TYPE_POST, API_BASE_URL + API_LOGIN,
+				json.toString(), CONTENT_TYPE, APPLICATION_JSON);
 		if (rc != 0)
 			mRequest = REQUEST_NONE;
 
@@ -189,7 +206,8 @@ public class PWParser implements PWConnection.PWConnectionInterface {
 			return -1;
 
 		mRequest = REQUEST_INFO;
-		int rc = PWConnection.getInstance().send(PWConnection.TYPE_GET, API_BASE_URL + API_INFO, "", AUTHORIZATION, BEARER + " " + user.getToken());
+		int rc = PWConnection.getInstance().send(PWConnection.TYPE_GET, API_BASE_URL + API_INFO,
+				"", AUTHORIZATION, BEARER + " " + user.getToken());
 		if (rc != 0)
 			mRequest = REQUEST_NONE;
 
@@ -201,7 +219,30 @@ public class PWParser implements PWConnection.PWConnectionInterface {
 			return -1;
 
 		mRequest = REQUEST_LIST;
-		int rc = PWConnection.getInstance().send(PWConnection.TYPE_GET, API_BASE_URL + API_LIST, "", AUTHORIZATION, BEARER + " " + user.getToken());
+		int rc = PWConnection.getInstance().send(PWConnection.TYPE_GET, API_BASE_URL + API_LIST,
+				"", AUTHORIZATION, BEARER + " " + user.getToken());
+		if (rc != 0)
+			mRequest = REQUEST_NONE;
+
+		return rc;
+	}
+
+	public int transaction(PWUser user, String name, long amount) {
+		if (isBusy())
+			return -1;
+
+		JSONObject json = new JSONObject();
+		try {
+			json.put("name", name);
+			json.put("amount", amount);
+		} catch (Exception e) {
+			PWLog.error("pwparser transaction failed on json.put");
+			return -1;
+		}
+
+		mRequest = REQUEST_TRANSACTION;
+		int rc = PWConnection.getInstance().send(PWConnection.TYPE_POST, API_BASE_URL + API_TRANSACTION,
+				json.toString(), CONTENT_TYPE, APPLICATION_JSON, AUTHORIZATION, BEARER + " " + user.getToken());
 		if (rc != 0)
 			mRequest = REQUEST_NONE;
 

@@ -3,6 +3,7 @@ package parrotwings.com.parrotwings.PWUtil;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
@@ -18,7 +19,8 @@ import java.util.TimerTask;
 public class PWState implements PWParser.PWParserInterface {
 	public interface PWStateInterface {
 		void onReady();
-		void onIncome();
+		void onInTransaction(PWTransaction trans);
+		void onOutTransaction(PWTransaction trans);
 	}
 
 	private	static final int	STATE_NONE			= 0;
@@ -33,6 +35,7 @@ public class PWState implements PWParser.PWParserInterface {
 	private int							mOldState;
 	private int							mNewState;
 	private Timer						mTimer;
+	private ArrayList<PWTransaction>	mOutTransList;
 
 	@Override
 	public void onResponseRegister(String result) {
@@ -56,6 +59,11 @@ public class PWState implements PWParser.PWParserInterface {
 	public void onResponseList(String result) {
 		if (extractList(result) == 0)
 			mNewState = STATE_READY;
+	}
+
+	@Override
+	public void onResponseTransaction(String result) {
+		extractTransaction(result);
 	}
 
 	private int extractToken(String result) {
@@ -111,7 +119,7 @@ public class PWState implements PWParser.PWParserInterface {
 
 		try {
 			JSONObject object = new JSONObject(result);
-			JSONArray list = object.getJSONArray(PWParser.API_LIST_TRANS);
+			JSONArray list = object.getJSONArray(PWParser.API_LIST_TOKEN);
 			for (int i=0; i<list.length(); i++) {
 				JSONObject	item = list.getJSONObject(i);
 				Date		date = new Date(item.getString(PWParser.API_LIST_DATE));
@@ -125,9 +133,41 @@ public class PWState implements PWParser.PWParserInterface {
 			}
 		}
 		catch (Exception e) {
-			PWLog.error("pwstate failed on extractInfo json");
+			PWLog.error("pwstate failed on extractList json");
 			return -1;
 		}
+
+		return 0;
+	}
+
+	private int extractTransaction(String result) {
+		long balance	= 0;
+		long amount		= 0;
+		String name		= null;
+		Date date		= null;
+
+		try {
+			JSONObject object = new JSONObject(result);
+			JSONObject tok = object.getJSONObject(PWParser.API_TRANS_TOKEN);
+			date = new Date(tok.getString(PWParser.API_TRANS_DATE));
+			name = tok.getString(PWParser.API_TRANS_USERNAME);
+			balance = tok.getLong(PWParser.API_TRANS_BALANCE);
+			amount = tok.getLong(PWParser.API_TRANS_AMOUNT);
+
+			PWTransaction trans = new PWTransaction(date,
+					amount, balance, name);
+
+			mOutTransList.add(trans);
+		}
+		catch (Exception e) {
+			PWLog.error("pwstate failed on extractTransaction json");
+			return -1;
+		}
+
+		if (name == null)
+			return -1;
+
+		mUser.setBalance(balance);
 
 		return 0;
 	}
@@ -160,6 +200,17 @@ public class PWState implements PWParser.PWParserInterface {
 						break;
 				}
 			}
+
+			if ((mNewState == STATE_READY) && mOutTransList.size() != 0) {
+				PWTransaction	trans = mOutTransList.get(0);
+				mOutTransList.remove(0);
+
+				ListIterator<PWStateInterface> itr = mListeners.listIterator();
+				while (itr.hasNext()) {
+					PWStateInterface iface = itr.next();
+					iface.onOutTransaction(trans);
+				}
+			}
 		}
 	}
 
@@ -168,6 +219,7 @@ public class PWState implements PWParser.PWParserInterface {
 		mNewState = STATE_NONE;
 		mUser = new PWUser();
 		mListeners = new LinkedList<>();
+		mOutTransList = new ArrayList<>();
 
 		PWParser.getInstance().addListener(this);
 
@@ -207,5 +259,9 @@ public class PWState implements PWParser.PWParserInterface {
 	public int login(String email, String password) {
 		mUser = new PWUser(email, password);
 		return PWParser.getInstance().login(mUser);
+	}
+
+	public int transaction(String name, long amount) {
+		return PWParser.getInstance().transaction(mUser, name, amount);
 	}
 }

@@ -1,4 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
-<menu xmlns:android="http://schemas.android.com/apk/res/android">
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+	  xmlns:app="http://schemas.android.com/apk/res-auto"
+	  xmlns:tools="http://schemas.android.com/tools"
+	  tools:context=".MainActivity">
+
+	<item android:id="@+id/mitem_trans"
+		  android:title="New transaction"
+		  app:showAsAction="never"/>
+
+	<item android:id="@+id/mitem_date"
+		  android:title="Sort by date"
+		  app:showAsAction="never"/>
+
+	<item android:id="@+id/mitem_name"
+		  android:title="Sort by name"
+		  app:showAsAction="never"/>
+
+	<item android:id="@+id/mitem_amount"
+		  android:title="Sort by amount"
+		  app:showAsAction="never"/>
+
+	<item android:id="@+id/mitem_logout"
+		  android:title="Logout"
+		  app:showAsAction="never"/>
 
 </menu>
