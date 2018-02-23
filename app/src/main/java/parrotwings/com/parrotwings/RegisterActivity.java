@@ -39,6 +39,7 @@ public class RegisterActivity extends AppCompatActivity implements PWState.PWSta
 			public void run() {
 				Toast.makeText(RegisterActivity.this, error.getDescription(), Toast.LENGTH_LONG).show();
 				mProgress.setVisibility(View.INVISIBLE);
+				enableUI(true);
 			}
 		});
 	}

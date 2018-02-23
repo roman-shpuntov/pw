@@ -81,7 +81,7 @@ public class PWConnection {
 				try {
 					req.setHeader(key, header.getString(key));
 				} catch (JSONException e) {
-					PWLog.error("pwconnection failed on parse header");
+					PWLog.error("pwconnection fillHeader failed on parse header");
 					return -1;
 				}
 			}

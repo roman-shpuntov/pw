@@ -305,10 +305,7 @@ public class PWState implements PWParser.PWParserInterface {
 
 	private PWState() {
 		logout();
-
 		mListeners = new LinkedList<>();
-		mParser = new PWParser();
-		mParser.addListener(this);
 	}
 
 	public static PWState getInstance() {
@@ -338,8 +335,12 @@ public class PWState implements PWParser.PWParserInterface {
 	public void logout() {
 		if (mParser != null) {
 			mParser.logout();
+			mParser.removeListener(this);
 			mParser = null;
 		}
+
+		mParser = new PWParser();
+		mParser.addListener(this);
 
 		if (mTimer != null) {
 			mTimer.cancel();

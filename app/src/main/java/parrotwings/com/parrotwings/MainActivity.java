@@ -114,7 +114,8 @@ public class MainActivity extends PWAppCompatActivity implements PWState.PWState
 		super.onDestroy();
 
 		PWState.getInstance().removeListener(this);
-		PWState.getInstance().logout();
+		if (isFinishing())
+			PWState.getInstance().logout();
 	}
 
 	@Override
