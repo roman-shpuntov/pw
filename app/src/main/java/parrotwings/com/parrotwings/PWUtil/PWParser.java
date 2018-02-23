@@ -61,9 +61,9 @@ public class PWParser implements PWConnection.PWConnectionInterface {
 	private	static final int		REQUEST_INFO		= 5;
 	private	static final int		REQUEST_FILTER		= 6;
 
-	private static volatile PWParser	mInstance;
 	private List<PWParserInterface>		mListeners;
 	private int							mRequest;
+	private PWConnection				mConnection;
 
 	@Override
 	public void onRecv(PWError result) {
@@ -133,22 +133,11 @@ public class PWParser implements PWConnection.PWConnectionInterface {
 		mListeners.remove(listener);
 	}
 
-	private PWParser() {
+	public PWParser() {
 		mRequest = REQUEST_NONE;
 		mListeners = new LinkedList<>();
-		PWConnection.getInstance().addListener(this);
-	}
-
-	public static PWParser getInstance() {
-		if (mInstance == null) {
-			synchronized (PWParser.class) {
-				if (mInstance == null) {
-					mInstance = new PWParser();
-				}
-			}
-		}
-
-		return mInstance;
+		mConnection = new PWConnection(API_BASE_URL);
+		mConnection.addListener(this);
 	}
 
 	private boolean isBusy() {
@@ -159,19 +148,37 @@ public class PWParser implements PWConnection.PWConnectionInterface {
 		if (isBusy())
 			return -1;
 
+		JSONObject payload = new JSONObject();
+		try {
+			payload.put("username", user.getName());
+			payload.put("password", user.getPassword());
+			payload.put("email", user.getEmail());
+		} catch (Exception e) {
+			PWLog.error("pwparser register failed on payload.put");
+			return -1;
+		}
+
+		JSONObject header = new JSONObject();
+		try {
+			header.put(CONTENT_TYPE, APPLICATION_JSON);
+		} catch (Exception e) {
+			PWLog.error("pwparser register failed on header.put");
+			return -1;
+		}
+
 		JSONObject json = new JSONObject();
 		try {
-			json.put("username", user.getName());
-			json.put("password", user.getPassword());
-			json.put("email", user.getEmail());
+			json.put(PWConnection.OBJECT_TYPE, PWConnection.TYPE_POST);
+			json.put(PWConnection.OBJECT_URL, API_REGISTER);
+			json.put(PWConnection.OBJECT_PAYLOAD, payload);
+			json.put(PWConnection.OBJECT_HEADER, header);
 		} catch (Exception e) {
 			PWLog.error("pwparser register failed on json.put");
 			return -1;
 		}
 
 		mRequest = REQUEST_REGISTER;
-		int rc = PWConnection.getInstance().send(PWConnection.TYPE_POST, API_BASE_URL + API_REGISTER,
-				json.toString(), CONTENT_TYPE, APPLICATION_JSON);
+		int rc = mConnection.send(json);
 		if (rc != 0)
 			mRequest = REQUEST_NONE;
 
@@ -182,18 +189,36 @@ public class PWParser implements PWConnection.PWConnectionInterface {
 		if (isBusy())
 			return -1;
 
+		JSONObject payload = new JSONObject();
+		try {
+			payload.put("email", user.getEmail());
+			payload.put("password", user.getPassword());
+		} catch (Exception e) {
+			PWLog.error("pwparser login failed on payload.put");
+			return -1;
+		}
+
+		JSONObject header = new JSONObject();
+		try {
+			header.put(CONTENT_TYPE, APPLICATION_JSON);
+		} catch (Exception e) {
+			PWLog.error("pwparser login failed on header.put");
+			return -1;
+		}
+
 		JSONObject json = new JSONObject();
 		try {
-			json.put("email", user.getEmail());
-			json.put("password", user.getPassword());
+			json.put(PWConnection.OBJECT_TYPE, PWConnection.TYPE_POST);
+			json.put(PWConnection.OBJECT_URL, API_LOGIN);
+			json.put(PWConnection.OBJECT_PAYLOAD, payload);
+			json.put(PWConnection.OBJECT_HEADER, header);
 		} catch (Exception e) {
 			PWLog.error("pwparser login failed on json.put");
 			return -1;
 		}
 
 		mRequest = REQUEST_LOGIN;
-		int rc = PWConnection.getInstance().send(PWConnection.TYPE_POST, API_BASE_URL + API_LOGIN,
-				json.toString(), CONTENT_TYPE, APPLICATION_JSON);
+		int rc = mConnection.send(json);
 		if (rc != 0)
 			mRequest = REQUEST_NONE;
 
@@ -204,9 +229,26 @@ public class PWParser implements PWConnection.PWConnectionInterface {
 		if (isBusy())
 			return -1;
 
+		JSONObject header = new JSONObject();
+		try {
+			header.put(AUTHORIZATION, BEARER + " " + user.getToken());
+		} catch (Exception e) {
+			PWLog.error("pwparser info failed on header.put");
+			return -1;
+		}
+
+		JSONObject json = new JSONObject();
+		try {
+			json.put(PWConnection.OBJECT_TYPE, PWConnection.TYPE_GET);
+			json.put(PWConnection.OBJECT_URL, API_INFO);
+			json.put(PWConnection.OBJECT_HEADER, header);
+		} catch (Exception e) {
+			PWLog.error("pwparser info failed on json.put");
+			return -1;
+		}
+
 		mRequest = REQUEST_INFO;
-		int rc = PWConnection.getInstance().send(PWConnection.TYPE_GET, API_BASE_URL + API_INFO,
-				"", AUTHORIZATION, BEARER + " " + user.getToken());
+		int rc = mConnection.send(json);
 		if (rc != 0)
 			mRequest = REQUEST_NONE;
 
@@ -217,9 +259,26 @@ public class PWParser implements PWConnection.PWConnectionInterface {
 		if (isBusy())
 			return -1;
 
+		JSONObject header = new JSONObject();
+		try {
+			header.put(AUTHORIZATION, BEARER + " " + user.getToken());
+		} catch (Exception e) {
+			PWLog.error("pwparser list failed on header.put");
+			return -1;
+		}
+
+		JSONObject json = new JSONObject();
+		try {
+			json.put(PWConnection.OBJECT_TYPE, PWConnection.TYPE_GET);
+			json.put(PWConnection.OBJECT_URL, API_LIST);
+			json.put(PWConnection.OBJECT_HEADER, header);
+		} catch (Exception e) {
+			PWLog.error("pwparser list failed on json.put");
+			return -1;
+		}
+
 		mRequest = REQUEST_LIST;
-		int rc = PWConnection.getInstance().send(PWConnection.TYPE_GET, API_BASE_URL + API_LIST,
-				"", AUTHORIZATION, BEARER + " " + user.getToken());
+		int rc = mConnection.send(json);
 		if (rc != 0)
 			mRequest = REQUEST_NONE;
 
@@ -230,18 +289,37 @@ public class PWParser implements PWConnection.PWConnectionInterface {
 		if (isBusy())
 			return -1;
 
+		JSONObject payload = new JSONObject();
+		try {
+			payload.put("name", name);
+			payload.put("amount", amount);
+		} catch (Exception e) {
+			PWLog.error("pwparser transaction failed on payload.put");
+			return -1;
+		}
+
+		JSONObject header = new JSONObject();
+		try {
+			header.put(CONTENT_TYPE, APPLICATION_JSON);
+			header.put(AUTHORIZATION, BEARER + " " + user.getToken());
+		} catch (Exception e) {
+			PWLog.error("pwparser transaction failed on header.put");
+			return -1;
+		}
+
 		JSONObject json = new JSONObject();
 		try {
-			json.put("name", name);
-			json.put("amount", amount);
+			json.put(PWConnection.OBJECT_TYPE, PWConnection.TYPE_POST);
+			json.put(PWConnection.OBJECT_URL, API_TRANSACTION);
+			json.put(PWConnection.OBJECT_PAYLOAD, payload);
+			json.put(PWConnection.OBJECT_HEADER, header);
 		} catch (Exception e) {
 			PWLog.error("pwparser transaction failed on json.put");
 			return -1;
 		}
 
 		mRequest = REQUEST_TRANSACTION;
-		int rc = PWConnection.getInstance().send(PWConnection.TYPE_POST, API_BASE_URL + API_TRANSACTION,
-				json.toString(), CONTENT_TYPE, APPLICATION_JSON, AUTHORIZATION, BEARER + " " + user.getToken());
+		int rc = mConnection.send(json);
 		if (rc != 0)
 			mRequest = REQUEST_NONE;
 

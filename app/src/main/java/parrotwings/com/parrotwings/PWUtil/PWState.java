@@ -38,6 +38,7 @@ public class PWState implements PWParser.PWParserInterface {
 	private List<PWTransaction>			mOutTransList;
 	private List<PWTransaction>			mInTransList;
 	private List<PWError>				mErrors;
+	private PWParser					mParser;
 
 	@Override
 	public void onResponseRegister(PWError result) {
@@ -254,11 +255,11 @@ public class PWState implements PWParser.PWParserInterface {
 				switch (mNewState) {
 					case STATE_LOGGEDIN:
 					case STATE_REGISTERED:
-						PWParser.getInstance().info(mUser);
+						mParser.info(mUser);
 						break;
 
 					case STATE_LIST:
-						PWParser.getInstance().list(mUser);
+						mParser.list(mUser);
 						break;
 
 					case STATE_READY:
@@ -297,7 +298,7 @@ public class PWState implements PWParser.PWParserInterface {
 					}
 				}
 
-				PWParser.getInstance().list(mUser);
+				mParser.list(mUser);
 			}
 		}
 	}
@@ -306,7 +307,8 @@ public class PWState implements PWParser.PWParserInterface {
 		logout();
 
 		mListeners = new LinkedList<>();
-		PWParser.getInstance().addListener(this);
+		mParser = new PWParser();
+		mParser.addListener(this);
 	}
 
 	public static PWState getInstance() {
@@ -334,7 +336,10 @@ public class PWState implements PWParser.PWParserInterface {
 	}
 
 	public void logout() {
-		PWParser.getInstance().logout();
+		if (mParser != null) {
+			mParser.logout();
+			mParser = null;
+		}
 
 		if (mTimer != null) {
 			mTimer.cancel();
@@ -356,15 +361,15 @@ public class PWState implements PWParser.PWParserInterface {
 
 	public int register(String name, String email, String password) {
 		mUser = new PWUser(name, email, password);
-		return PWParser.getInstance().register(mUser);
+		return mParser.register(mUser);
 	}
 
 	public int login(String email, String password) {
 		mUser = new PWUser(email, password);
-		return PWParser.getInstance().login(mUser);
+		return mParser.login(mUser);
 	}
 
 	public int transaction(String name, long amount) {
-		return PWParser.getInstance().transaction(mUser, name, amount);
+		return mParser.transaction(mUser, name, amount);
 	}
 }

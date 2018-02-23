@@ -4,15 +4,21 @@ import android.os.AsyncTask;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.AbstractHttpMessage;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.Date;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
@@ -26,34 +32,22 @@ public class PWConnection {
 		void onRecv(PWError result);
 	}
 
-	private static volatile PWConnection	mInstance;
-
 	private	HttpClient						mClient;
 	private List<PWConnectionInterface>		mListeners;
+	private	String							mBaseURL;
 
 	public static final String				TYPE_POST			= "POST";
 	public static final String				TYPE_GET			= "GET";
 
-	public static final int					POSITION_TYPE		= 0;
-	public static final int					POSITION_URL		= 1;
-	public static final int					POSITION_PAYLOAD	= 2;
-	public static final int					POSITION_HEADER		= 3;
+	public static final String				OBJECT_TYPE			= "TYPE";
+	public static final String				OBJECT_URL			= "URL";
+	public static final String				OBJECT_PAYLOAD		= "PAYLOAD";
+	public static final String				OBJECT_HEADER		= "HEADER";
 
-	private PWConnection() {
+	public PWConnection(String baseURL) {
+		mBaseURL = baseURL;
 		mClient = new DefaultHttpClient();
 		mListeners = new LinkedList<>();
-	}
-
-	public static PWConnection getInstance() {
-		if (mInstance == null) {
-			synchronized (PWConnection.class) {
-				if (mInstance == null) {
-					mInstance = new PWConnection();
-				}
-			}
-		}
-
-		return mInstance;
 	}
 
 	public void addListener(PWConnectionInterface listener) {
@@ -75,20 +69,48 @@ public class PWConnection {
 		return result;
 	}
 
-	private PWError postRequest(String url, String payload, String... header) {
+	private int fillHeader(AbstractHttpMessage req, JSONObject json) {
+		JSONObject	header;
+
+		try {
+			header = json.getJSONObject(OBJECT_HEADER);
+
+			Iterator<String> iter = header.keys();
+			while (iter.hasNext()) {
+				String key = iter.next();
+				try {
+					req.setHeader(key, header.getString(key));
+				} catch (JSONException e) {
+					PWLog.error("pwconnection failed on parse header");
+					return -1;
+				}
+			}
+		} catch (Exception e) {}
+
+		return 0;
+	}
+
+	private PWError postRequest(JSONObject json) {
+		String		url;
+		String		pload;
+		try {
+			url		= json.getString(OBJECT_URL);
+			pload	= json.getString(OBJECT_PAYLOAD);
+		} catch (Exception e) {
+			PWLog.error("pwconnection no url/pload");
+			return new PWError(PWError.GENERAL_ERROR, PWError.GENERAL_ERROR_DESC);
+		}
+
 		InputStream inputStream;
 		String result = PWError.GENERAL_ERROR_DESC;
 		int code = PWError.GENERAL_ERROR;
 		try {
-			HttpPost request = new HttpPost(url);
-			StringEntity se = new StringEntity(payload);
+			HttpPost		request	= new HttpPost(mBaseURL + url);
+			StringEntity	se		= new StringEntity(pload);
+
 			request.setEntity(se);
-
-			if (header != null) {
-				int i;
-				for (i=0; i<header.length / 2; i++)
-					request.setHeader(header[i * 2], header[i * 2 + 1]);
-			}
+			if (fillHeader(request, json) != 0)
+				return new PWError(PWError.GENERAL_ERROR, PWError.GENERAL_ERROR_DESC);
 
 			HttpResponse response = mClient.execute(request);
 			inputStream = response.getEntity().getContent();
@@ -102,18 +124,22 @@ public class PWConnection {
 		return new PWError(code, result);
 	}
 
-	private PWError getRequest(String url, String... header) {
+	private PWError getRequest(JSONObject json) {
+		String		url;
+		try {
+			url = json.getString(OBJECT_URL);
+		} catch (Exception e) {
+			PWLog.error("pwconnection no url");
+			return new PWError(PWError.GENERAL_ERROR, PWError.GENERAL_ERROR_DESC);
+		}
+
 		InputStream inputStream;
 		String result = PWError.GENERAL_ERROR_DESC;
 		int code = PWError.GENERAL_ERROR;
 		try {
-			HttpGet request = new HttpGet(url);
-
-			if (header != null) {
-				int i;
-				for (i=0; i<header.length / 2; i++)
-					request.setHeader(header[i * 2], header[i * 2 + 1]);
-			}
+			HttpGet	request = new HttpGet(mBaseURL + url);
+			if (fillHeader(request, json) != 0)
+				return new PWError(PWError.GENERAL_ERROR, PWError.GENERAL_ERROR_DESC);
 
 			HttpResponse response = mClient.execute(request);
 			inputStream = response.getEntity().getContent();
@@ -121,33 +147,27 @@ public class PWConnection {
 				result = convertInputStreamToString(inputStream);
 			code = response.getStatusLine().getStatusCode();
 		} catch (Exception e) {
-			PWLog.error("pwconnection failed on post" + e.getLocalizedMessage());
+			PWLog.error("pwconnection failed on get" + e.getLocalizedMessage());
 		}
 
 		return new PWError(code, result);
 	}
 
-	private class HttpAsyncTask extends AsyncTask<String, Void, PWError> {
+	private class HttpJSONAsyncTask extends AsyncTask<JSONObject, Void, PWError> {
 		@Override
-		protected PWError doInBackground(String... urls) {
-			String[]	header = null;
-			if (urls.length > POSITION_HEADER) {
-				int	count = urls.length - POSITION_HEADER;
-				header = new String[count];
-
-				int	i;
-				for (i=0; i<urls.length - POSITION_HEADER; i++)
-					header[i] = urls[i + POSITION_HEADER];
+		protected PWError doInBackground(JSONObject... json) {
+			String	type;
+			try {
+				type = json[0].getString(OBJECT_TYPE);
+			} catch (Exception e) {
+				PWLog.error("pwconnection no type");
+				return new PWError(PWError.GENERAL_ERROR, PWError.GENERAL_ERROR_DESC);
 			}
-
-			String	type	= urls[POSITION_TYPE];
-			String	url		= urls[POSITION_URL];
-			String	pload	= urls[POSITION_PAYLOAD];
 
 			if (type.compareTo(TYPE_POST) == 0)
-				return postRequest(url, pload, header);
+				return postRequest(json[0]);
 			else if (type.compareTo(TYPE_GET) == 0)
-				return getRequest(url, header);
+				return getRequest(json[0]);
 
 			return new PWError(PWError.GENERAL_ERROR, PWError.GENERAL_ERROR_DESC);
 		}
@@ -164,18 +184,8 @@ public class PWConnection {
 		}
 	}
 
-	public int send(String type, String url, String payload, String... header) {
-		String[]	params = new String[POSITION_HEADER + header.length];
-
-		params[POSITION_TYPE]		= type;
-		params[POSITION_URL]		= url;
-		params[POSITION_PAYLOAD]	= payload;
-
-		int	i;
-		for(i=0; i<header.length; i++)
-			params[POSITION_HEADER + i] = header[i];
-
-		AsyncTask	task = new HttpAsyncTask().execute(params);
+	public int send(JSONObject json) {
+		AsyncTask	task = new HttpJSONAsyncTask().execute(json);
 		if (task == null)
 			return -1;
 
