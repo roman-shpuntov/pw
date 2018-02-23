@@ -11,6 +11,8 @@ import android.util.DisplayMetrics;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -23,12 +25,12 @@ import parrotwings.com.parrotwings.PWUtil.*;
 import static java.lang.Math.abs;
 
 public class TransactionActivity extends PWAppCompatActivity {
-	private EditText			mUser;
-	private EditText			mAmount;
-	private ListView			mList;
-	private ImageButton			mSend;
-	private ImageView			mDownBar;
-	private TransactionAdapter	mAdapter;
+	private AutoCompleteTextView	mUser;
+	private EditText				mAmount;
+	private ListView				mList;
+	private ImageButton				mSend;
+	private ImageView				mDownBar;
+	private TransactionAdapter		mAdapter;
 
 	public static final String	INTENT_USER_NAME	= "INTENT_USER_NAME";
 	public static final String	INTENT_AMOUNT		= "INTENT_AMOUNT";
@@ -96,7 +98,7 @@ public class TransactionActivity extends PWAppCompatActivity {
 
 				long balance = PWState.getInstance().getUser().getBalance();
 				if (balance < amount) {
-					Toast.makeText(TransactionActivity.this, "Insufficient funds on your account. Please change your amount and try again", Toast.LENGTH_LONG).show();
+					Toast.makeText(TransactionActivity.this, "Insufficient funds on your account. Please change your amount", Toast.LENGTH_LONG).show();
 					return;
 				}
 
@@ -118,6 +120,9 @@ public class TransactionActivity extends PWAppCompatActivity {
 			mAmount.setText(String.valueOf(amount));
 			mUser.setText(intent.getStringExtra(INTENT_USER_NAME));
 		}
+
+		ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, PWState.getInstance().getUser().getUserList());
+		mUser.setAdapter(adapter);
 	}
 
 	@Override

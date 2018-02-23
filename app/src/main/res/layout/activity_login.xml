@@ -57,7 +57,7 @@
 			android:gravity="center"
 			android:orientation="vertical">
 
-		<EditText
+			<EditText
 				android:id="@+id/login_email"
 				android:layout_width="@dimen/buttonWidth"
 				android:layout_height="@dimen/buttonHeight"
@@ -85,7 +85,7 @@
 				android:background="@drawable/rounded_box"
 				android:ems="10"
 				android:hint="Password"
-				android:inputType="textPersonName"
+				android:inputType="textPassword"
 				android:paddingLeft="8dp"
 				android:paddingStart="8dp"
 				android:paddingRight="8dp"
