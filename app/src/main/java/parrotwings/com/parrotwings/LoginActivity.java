@@ -7,6 +7,7 @@ import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import parrotwings.com.parrotwings.PWUtil.*;
@@ -16,6 +17,7 @@ public class LoginActivity extends AppCompatActivity implements PWState.PWStateI
 	private EditText	mPassword;
 	private Button		mRegistration;
 	private Button		mSignin;
+	private ProgressBar	mProgress;
 
 	@Override
 	public void onReady() {
@@ -34,10 +36,9 @@ public class LoginActivity extends AppCompatActivity implements PWState.PWStateI
 		runOnUiThread(new Runnable() {
 			@Override
 			public void run() {
-				Toast toast = Toast.makeText(LoginActivity.this,
-						error.getDescription(), Toast.LENGTH_LONG);
-				toast.setGravity(Gravity.TOP | Gravity.CENTER_HORIZONTAL, 0, 0);
-				toast.show();
+				Toast.makeText(LoginActivity.this, error.getDescription(), Toast.LENGTH_LONG).show();
+				mProgress.setVisibility(View.INVISIBLE);
+				enableUI(true);
 			}
 		});
 	}
@@ -57,6 +58,9 @@ public class LoginActivity extends AppCompatActivity implements PWState.PWStateI
 
 		mEmail		= findViewById(R.id.login_email);
 		mPassword	= findViewById(R.id.login_password);
+		mProgress	= findViewById(R.id.login_progress);
+
+		mProgress.setVisibility(View.INVISIBLE);
 
 		mRegistration = findViewById(R.id.login_reg);
 		mRegistration.setOnClickListener(new View.OnClickListener() {
@@ -75,6 +79,10 @@ public class LoginActivity extends AppCompatActivity implements PWState.PWStateI
 				int rc = PWState.getInstance().login(mEmail.getText().toString(), mPassword.getText().toString());
 				if (rc != 0)
 					Toast.makeText(LoginActivity.this, "Something wrong on login. Please try again later", Toast.LENGTH_LONG).show();
+				else {
+					mProgress.setVisibility(View.VISIBLE);
+					enableUI(false);
+				}
 			}
 		});
 
@@ -88,5 +96,13 @@ public class LoginActivity extends AppCompatActivity implements PWState.PWStateI
 		super.onDestroy();
 
 		PWState.getInstance().removeListener(this);
+	}
+
+	private void enableUI(boolean enable) {
+		mEmail.setEnabled(enable);
+		mPassword.setEnabled(enable);
+
+		mRegistration.setEnabled(enable);
+		mSignin.setEnabled(enable);
 	}
 }

@@ -16,8 +16,7 @@ import java.util.TimerTask;
 import parrotwings.com.parrotwings.PWUtil.PWGradientTextView;
 
 public class LogoActivity extends AppCompatActivity {
-	private Timer				mTimer;
-	private PWGradientTextView	mName;
+	private Timer		mTimer;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -28,14 +27,12 @@ public class LogoActivity extends AppCompatActivity {
 				WindowManager.LayoutParams.FLAG_FULLSCREEN);
 
 		setContentView(R.layout.activity_logo);
-
-		mName = findViewById(R.id.logo_name);
 	}
 
 	@Override
 	protected void onResume() {
 		mTimer = new Timer();
-		mTimer.schedule(new closeActivityTask(), 10000);
+		mTimer.schedule(new closeActivityTask(), 1000);
 
 		super.onResume();
 	}

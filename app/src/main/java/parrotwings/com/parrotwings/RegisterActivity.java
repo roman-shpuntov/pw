@@ -7,6 +7,7 @@ import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import parrotwings.com.parrotwings.PWUtil.*;
@@ -17,6 +18,7 @@ public class RegisterActivity extends AppCompatActivity implements PWState.PWSta
 	private EditText	mPassword;
 	private Button		mBack;
 	private Button		mSignup;
+	private ProgressBar mProgress;
 
 	@Override
 	public void onReady() {
@@ -35,10 +37,8 @@ public class RegisterActivity extends AppCompatActivity implements PWState.PWSta
 		runOnUiThread(new Runnable() {
 			@Override
 			public void run() {
-				Toast toast = Toast.makeText(RegisterActivity.this,
-						error.getDescription(), Toast.LENGTH_LONG);
-				toast.setGravity(Gravity.TOP | Gravity.CENTER_HORIZONTAL, 0, 0);
-				toast.show();
+				Toast.makeText(RegisterActivity.this, error.getDescription(), Toast.LENGTH_LONG).show();
+				mProgress.setVisibility(View.INVISIBLE);
 			}
 		});
 	}
@@ -59,6 +59,9 @@ public class RegisterActivity extends AppCompatActivity implements PWState.PWSta
 		mEmail		= findViewById(R.id.register_email);
 		mName		= findViewById(R.id.register_name);
 		mPassword	= findViewById(R.id.register_password);
+		mProgress	= findViewById(R.id.register_progress);
+
+		mProgress.setVisibility(View.INVISIBLE);
 
 		mBack = findViewById(R.id.register_back);
 		mBack.setOnClickListener(new View.OnClickListener() {
@@ -77,6 +80,10 @@ public class RegisterActivity extends AppCompatActivity implements PWState.PWSta
 				int rc = PWState.getInstance().register(mName.getText().toString(), mEmail.getText().toString(), mPassword.getText().toString());
 				if (rc != 0)
 					Toast.makeText(RegisterActivity.this, "Something wrong on registration. Please try again later", Toast.LENGTH_LONG).show();
+				else {
+					mProgress.setVisibility(View.VISIBLE);
+					enableUI(false);
+				}
 			}
 		});
 
@@ -91,5 +98,14 @@ public class RegisterActivity extends AppCompatActivity implements PWState.PWSta
 		super.onDestroy();
 
 		PWState.getInstance().removeListener(this);
+	}
+
+	private void enableUI(boolean enable) {
+		mEmail.setEnabled(enable);
+		mName.setEnabled(enable);
+		mPassword.setEnabled(enable);
+
+		mBack.setEnabled(enable);
+		mSignup.setEnabled(enable);
 	}
 }

@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 	<color name="colorPrimary">#3F51B5</color>
-	<color name="colorPrimaryDark">#303F9F</color>
-	<color name="colorAccent">#FF4081</color>
+	<color name="colorPrimaryDark">#303f9f</color>
+	<color name="colorAccent">#0073CF</color>
+	<color name="colorLogoBack">#803ed2</color>
+	<color name="colorButtonStroke">@android:color/white</color>
+	<color name="colorButtonPressedStart">@android:color/darker_gray</color>
+	<color name="colorButtonPressedEnd">@android:color/darker_gray</color>
+	<color name="colorButtonFocused">@android:color/transparent</color>
+	<color name="colorButtonShapeStart">@android:color/transparent</color>
+	<color name="colorButtonShapeEnd">@android:color/transparent</color>
 </resources>

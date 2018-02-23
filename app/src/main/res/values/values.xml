@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<dimen name="buttonTextSize">16sp</dimen>
+	<dimen name="buttonCornerRadius">20dp</dimen>
+	<dimen name="buttonStrokeWidth">1dp</dimen>
+	<dimen name="buttonWidth">160dp</dimen>
+	<dimen name="buttonHeight">30dp</dimen>
+	<dimen name="editCornerRadius">16dp</dimen>
+	<dimen name="defaultMargin">10dp</dimen>
+	<dimen name="titleTextSize">20sp</dimen>
+</resources>
