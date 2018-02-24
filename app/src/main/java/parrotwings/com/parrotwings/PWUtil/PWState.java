@@ -1,5 +1,7 @@
 package parrotwings.com.parrotwings.PWUtil;
 
+import android.view.MotionEvent;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -19,15 +21,22 @@ public class PWState implements PWParser.PWParserInterface {
 	public interface PWStateInterface {
 		void onReady();
 		void onError(PWError error);
+		void onMessage(PWError error);
 		void onInTransaction(PWTransaction trans);
 		void onOutTransaction(PWTransaction trans);
 	}
 
-	private	static final int	STATE_NONE			= 0;
-	private	static final int	STATE_LOGGEDIN		= 1;
-	private	static final int	STATE_REGISTERED	= 2;
-	private	static final int	STATE_LIST			= 3;
-	private	static final int	STATE_READY			= 4;
+	private	static final int	STATE_NONE				= 0;
+	private	static final int	STATE_LOGGEDIN			= 1;
+	private	static final int	STATE_REGISTERED		= 2;
+	private	static final int	STATE_LIST				= 3;
+	private	static final int	STATE_READY				= 4;
+
+	private	static final String	REGISTER_EXIST_ERROR	= "A user with that email already exists";
+	private	static final String	REGISTER_NO_INFO_ERROR	= "You must send username and password";
+
+	private	static final String	LOGIN_NO_INFO_ERROR		= "You must send email and password.";
+	private	static final String	LOGIN_EMAIL_PWD_ERROR	= "Invalid email or password.";
 
 	private static volatile PWState		mInstance;
 	private List<PWStateInterface>		mListeners;
@@ -38,11 +47,28 @@ public class PWState implements PWParser.PWParserInterface {
 	private List<PWTransaction>			mOutTransList;
 	private List<PWTransaction>			mInTransList;
 	private List<PWError>				mErrors;
+	private List<PWError>				mMessages;
 	private PWParser					mParser;
+
+	private PWError generalErrorWihError(PWError error) {
+		return new PWError(error.getCode(), PWError.GENERAL_ERROR_DESC + " System message: " + error.getDescription());
+	}
 
 	@Override
 	public void onResponseRegister(PWError result) {
 		if (!result.isSuccess()) {
+			if (!result.isHTTPSuccess()) {
+				String	s = result.getDescription();
+				if (s.compareTo(REGISTER_EXIST_ERROR) == 0)
+					mErrors.add(new PWError(result.getCode(), s + ". Please provide another email."));
+				else if (s.compareTo(REGISTER_NO_INFO_ERROR) == 0)
+					mErrors.add(new PWError(result.getCode(), "Please provide another username, email and password."));
+				else
+					mErrors.add(generalErrorWihError(result));
+
+				return;
+			}
+
 			mErrors.add(result);
 			return;
 		}
@@ -52,12 +78,24 @@ public class PWState implements PWParser.PWParserInterface {
 			return;
 		}
 
-		mErrors.add(new PWError(PWError.GENERAL_ERROR, PWError.GENERAL_ERROR_DESC));
+		mErrors.add(new PWError());
 	}
 
 	@Override
 	public void onResponseLogin(PWError result) {
 		if (!result.isSuccess()) {
+			if (!result.isHTTPSuccess()) {
+				String	s = result.getDescription();
+				if (s.compareTo(LOGIN_NO_INFO_ERROR) == 0)
+					mErrors.add(new PWError(result.getCode(), "Please provide email and password."));
+				else if (s.compareTo(LOGIN_EMAIL_PWD_ERROR) == 0)
+					mErrors.add(new PWError(result.getCode(), "Please provide correct email and password."));
+				else
+					mErrors.add(generalErrorWihError(result));
+
+				return;
+			}
+
 			mErrors.add(result);
 			return;
 		}
@@ -67,13 +105,13 @@ public class PWState implements PWParser.PWParserInterface {
 			return;
 		}
 
-		mErrors.add(new PWError(PWError.GENERAL_ERROR, PWError.GENERAL_ERROR_DESC));
+		mErrors.add(new PWError());
 	}
 
 	@Override
 	public void onResponseInfo(PWError result) {
 		if (!result.isSuccess()) {
-			mErrors.add(result);
+			mErrors.add(generalErrorWihError(result));
 			return;
 		}
 
@@ -82,13 +120,13 @@ public class PWState implements PWParser.PWParserInterface {
 			return;
 		}
 
-		mErrors.add(new PWError(PWError.GENERAL_ERROR, PWError.GENERAL_ERROR_DESC));
+		mErrors.add(new PWError());
 	}
 
 	@Override
 	public void onResponseList(PWError result) {
 		if (!result.isSuccess()) {
-			mErrors.add(result);
+			mErrors.add(generalErrorWihError(result));
 			return;
 		}
 
@@ -97,20 +135,23 @@ public class PWState implements PWParser.PWParserInterface {
 			return;
 		}
 
-		mErrors.add(new PWError(PWError.GENERAL_ERROR, PWError.GENERAL_ERROR_DESC));
+		mErrors.add(new PWError());
 	}
 
 	@Override
 	public void onResponseTransaction(PWError result) {
 		if (!result.isSuccess()) {
-			mErrors.add(result);
+			if (!result.isHTTPSuccess())
+				mMessages.add(new PWError(result.getCode(), "System message: " + result.getDescription()));
+			else
+				mErrors.add(generalErrorWihError(result));
 			return;
 		}
 
 		if (extractTransaction(result.getDescription()) == 0)
 			return;
 
-		mErrors.add(new PWError(PWError.GENERAL_ERROR, PWError.GENERAL_ERROR_DESC));
+		mErrors.add(new PWError());
 	}
 
 	private int extractToken(String result) {
@@ -250,6 +291,15 @@ public class PWState implements PWParser.PWParserInterface {
 			}
 			mErrors.clear();
 
+			for (PWError message : mMessages) {
+				ListIterator<PWStateInterface> itr = mListeners.listIterator();
+				while (itr.hasNext()) {
+					PWStateInterface iface = itr.next();
+					iface.onMessage(message);
+				}
+			}
+			mMessages.clear();
+
 			if (mNewState != mOldState) {
 				mOldState = mNewState;
 
@@ -349,13 +399,14 @@ public class PWState implements PWParser.PWParserInterface {
 			mTimer = null;
 		}
 
-		mErrors = new ArrayList<>();
-		mOldState = STATE_NONE;
-		mNewState = STATE_NONE;
-		mUser = new PWUser();
+		mErrors		= new ArrayList<>();
+		mMessages	= new ArrayList<>();
+		mOldState	= STATE_NONE;
+		mNewState	= STATE_NONE;
+		mUser		= new PWUser();
 
-		mInTransList = new ArrayList<>();
-		mOutTransList = new ArrayList<>();
+		mInTransList	= new ArrayList<>();
+		mOutTransList	= new ArrayList<>();
 
 		mTimer = new Timer();
 		mTimer.schedule(new ProcessingTask(), 1000, 1000);

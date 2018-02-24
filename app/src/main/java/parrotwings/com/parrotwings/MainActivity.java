@@ -29,13 +29,25 @@ public class MainActivity extends PWAppCompatActivity implements PWState.PWState
 	private MainAdapter		mAdapter;
 	private	PWTransaction	mNewTrans;
 
-	private final int		POPUP_GROUPID			= 1;
+	private final int		POPUP_GROUPID	= 1;
 
 	@Override
 	public void onReady() {}
 
 	@Override
 	public void onError(final PWError error) {
+		runOnUiThread(new Runnable() {
+			@Override
+			public void run() {
+				Intent intent = new Intent(MainActivity.this, LoginActivity.class);
+				startActivity(intent);
+				finish();
+			}
+		});
+	}
+
+	@Override
+	public void onMessage(final PWError error) {
 		runOnUiThread(new Runnable() {
 			@Override
 			public void run() {

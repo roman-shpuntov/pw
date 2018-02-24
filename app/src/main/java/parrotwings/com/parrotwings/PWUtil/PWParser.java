@@ -54,19 +54,18 @@ public class PWParser implements PWConnection.PWConnectionInterface {
 	private	static final String		AUTHORIZATION		= "Authorization";
 	private	static final String		BEARER				= "Bearer";
 
-	private	static final int		REQUEST_NONE		= PWConnection.INVALID_REQUEST;
-	private	static final int		REQUEST_REGISTER	= REQUEST_NONE + 1;
-	private	static final int		REQUEST_LOGIN		= REQUEST_REGISTER + 1;
-	private	static final int		REQUEST_LIST		= REQUEST_LOGIN + 1;
-	private	static final int		REQUEST_TRANSACTION	= REQUEST_LIST + 1;
-	private	static final int		REQUEST_INFO		= REQUEST_TRANSACTION + 1;
-	private	static final int		REQUEST_FILTER		= REQUEST_INFO + 1;
+	private	static final String		REQUEST_REGISTER	= "REQUEST_REGISTER";
+	private	static final String		REQUEST_LOGIN		= "REQUEST_LOGIN";
+	private	static final String		REQUEST_LIST		= "REQUEST_LIST";
+	private	static final String		REQUEST_TRANSACTION	= "REQUEST_TRANSACTION";
+	private	static final String		REQUEST_INFO		= "REQUEST_INFO";
+	private	static final String		REQUEST_FILTER		= "REQUEST_FILTER";
 
 	private List<PWParserInterface>		mListeners;
 	private PWConnection				mConnection;
 
 	@Override
-	public void onRecv(int request, PWError result) {
+	public void onRecv(String request, PWError result) {
 		//PWLog.verbose("pwparser recv result code " + result.getCode() + " description " + result.getDescription() + " request " + request);
 
 		switch (request) {

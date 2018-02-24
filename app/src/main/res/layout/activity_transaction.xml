@@ -13,7 +13,7 @@
 		android:layout_height="?android:attr/actionBarSize"
 		android:background="@color/colorPrimary"
 		app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
-		app:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar">
+		android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar">
 
 		<TextView
 			android:id="@+id/trans_title"

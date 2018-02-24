@@ -29,14 +29,14 @@ import java.util.ListIterator;
 
 public class PWConnection {
 	public interface PWConnectionInterface {
-		void onRecv(int request, PWError result);
+		void onRecv(String request, PWError result);
 	}
 
 	private	HttpClient						mClient;
 	private List<PWConnectionInterface>		mListeners;
 	private	String							mBaseURL;
 
-	public static final int					INVALID_REQUEST		= 0;
+	public static final String				REQUEST_INVALID		= "REQUEST_INVALID";
 
 	public static final String				TYPE_POST			= "POST";
 	public static final String				TYPE_GET			= "GET";
@@ -101,7 +101,7 @@ public class PWConnection {
 			pload	= json.getString(OBJECT_PAYLOAD);
 		} catch (Exception e) {
 			PWLog.error("pwconnection no url/pload");
-			return new PWError(PWError.GENERAL_ERROR, PWError.GENERAL_ERROR_DESC);
+			return new PWError();
 		}
 
 		InputStream inputStream;
@@ -113,7 +113,7 @@ public class PWConnection {
 
 			request.setEntity(se);
 			if (fillHeader(request, json) != 0)
-				return new PWError(PWError.GENERAL_ERROR, PWError.GENERAL_ERROR_DESC);
+				return new PWError();
 
 			HttpResponse response = mClient.execute(request);
 			inputStream = response.getEntity().getContent();
@@ -121,7 +121,8 @@ public class PWConnection {
 				result = convertInputStreamToString(inputStream);
 			code = response.getStatusLine().getStatusCode();
 		} catch (Exception e) {
-			PWLog.error("pwconnection failed on post" + e.getLocalizedMessage());
+			PWLog.error("pwconnection failed on post " + e.getLocalizedMessage());
+			result = e.getLocalizedMessage();
 		}
 
 		return new PWError(code, result);
@@ -133,7 +134,7 @@ public class PWConnection {
 			url = json.getString(OBJECT_URL);
 		} catch (Exception e) {
 			PWLog.error("pwconnection no url");
-			return new PWError(PWError.GENERAL_ERROR, PWError.GENERAL_ERROR_DESC);
+			return new PWError();
 		}
 
 		InputStream inputStream;
@@ -142,7 +143,7 @@ public class PWConnection {
 		try {
 			HttpGet	request = new HttpGet(mBaseURL + url);
 			if (fillHeader(request, json) != 0)
-				return new PWError(PWError.GENERAL_ERROR, PWError.GENERAL_ERROR_DESC);
+				return new PWError();
 
 			HttpResponse response = mClient.execute(request);
 			inputStream = response.getEntity().getContent();
@@ -150,23 +151,24 @@ public class PWConnection {
 				result = convertInputStreamToString(inputStream);
 			code = response.getStatusLine().getStatusCode();
 		} catch (Exception e) {
-			PWLog.error("pwconnection failed on get" + e.getLocalizedMessage());
+			PWLog.error("pwconnection failed on get " + e.getLocalizedMessage());
+			result = e.getLocalizedMessage();
 		}
 
 		return new PWError(code, result);
 	}
 
 	private class HTTPResponse {
-		PWError	error	= new PWError(PWError.GENERAL_ERROR, PWError.GENERAL_ERROR_DESC);
-		int		request	= INVALID_REQUEST;
+		PWError	error	= new PWError();
+		String	request	= REQUEST_INVALID;
 
 		HTTPResponse() {}
 
-		HTTPResponse(int r) {
+		HTTPResponse(String r) {
 			request = r;
 		}
 
-		HTTPResponse(PWError e, int r) {
+		HTTPResponse(PWError e, String r) {
 			error = e;
 			request = r;
 		}
@@ -176,10 +178,10 @@ public class PWConnection {
 		@Override
 		protected HTTPResponse doInBackground(JSONObject... json) {
 			String	type;
-			int		req = INVALID_REQUEST;
+			String	req = REQUEST_INVALID;
 			try {
 				type	= json[0].getString(OBJECT_TYPE);
-				req		= json[0].getInt(OBJECT_REQUEST);
+				req		= json[0].getString(OBJECT_REQUEST);
 			} catch (Exception e) {
 				PWLog.error("pwconnection no type");
 				return new HTTPResponse(req);

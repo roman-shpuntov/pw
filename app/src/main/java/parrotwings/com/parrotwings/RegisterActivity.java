@@ -45,6 +45,9 @@ public class RegisterActivity extends AppCompatActivity implements PWState.PWSta
 	}
 
 	@Override
+	public void onMessage(PWError error) {}
+
+	@Override
 	public void onInTransaction(PWTransaction trans) {}
 
 	@Override
@@ -78,10 +81,31 @@ public class RegisterActivity extends AppCompatActivity implements PWState.PWSta
 		mSignup.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View view) {
-				int rc = PWState.getInstance().register(mName.getText().toString(), mEmail.getText().toString(), mPassword.getText().toString());
+				String	email	= mEmail.getText().toString();
+				String	name	= mName.getText().toString();
+				String	passwd	= mPassword.getText().toString();
+
+				if (!PWChecker.isCorrectEmail(email)) {
+					Toast.makeText(RegisterActivity.this, "Please provide correct email.", Toast.LENGTH_LONG).show();
+					return;
+				}
+
+				if (!PWChecker.isCorrectUsername(name)) {
+					Toast.makeText(RegisterActivity.this, "Please provide correct user name (min " +
+						PWChecker.USERNAME_MIN_LENGTH + " and max " + PWChecker.USERNAME_MAX_LENGTH + " symbols).", Toast.LENGTH_LONG).show();
+					return;
+				}
+
+				if (!PWChecker.isCorrectPassword(passwd)) {
+					Toast.makeText(RegisterActivity.this, "Please provide correct password (min " +
+						PWChecker.PASSWORD_MIN_LENGTH + " and max " + PWChecker.PASSWORD_MAX_LENGTH + " symbols).", Toast.LENGTH_LONG).show();
+					return;
+				}
+
+				int rc = PWState.getInstance().register(name, email, passwd);
 				if (rc != 0) {
 					PWLog.error("Register failed on register");
-					Toast.makeText(RegisterActivity.this, "Something wrong on registration. Please try again later", Toast.LENGTH_LONG).show();
+					Toast.makeText(RegisterActivity.this, "Something wrong on registration. Please try again later.", Toast.LENGTH_LONG).show();
 				}
 				else {
 					mProgress.setVisibility(View.VISIBLE);
@@ -91,9 +115,13 @@ public class RegisterActivity extends AppCompatActivity implements PWState.PWSta
 		});
 
 		// DEBUG
-		mEmail.setText("email123@domain.com");
-		mName.setText("username123");
-		mPassword.setText("password123");
+		//mEmail.setText("email123@domain.com");
+		//mName.setText("username123");
+		//mPassword.setText("password123");
+
+		mEmail.setText("email456@domain.com");
+		mName.setText("username456");
+		mPassword.setText("password456");
 	}
 
 	@Override

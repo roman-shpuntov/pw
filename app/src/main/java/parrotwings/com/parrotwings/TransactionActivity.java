@@ -41,7 +41,17 @@ public class TransactionActivity extends PWAppCompatActivity implements PWState.
 	public void onReady() {}
 
 	@Override
-	public void onError(PWError error) {}
+	public void onError(PWError error) {
+		runOnUiThread(new Runnable() {
+			@Override
+			public void run() {
+				finish();
+			}
+		});
+	}
+
+	@Override
+	public void onMessage(PWError error) {}
 
 	@Override
 	public void onInTransaction(PWTransaction trans) {
@@ -133,7 +143,7 @@ public class TransactionActivity extends PWAppCompatActivity implements PWState.
 					return;
 				}
 
-				if (amount < 0) {
+				if (amount <= 0) {
 					Toast.makeText(TransactionActivity.this, "Please provide correct amount value.", Toast.LENGTH_LONG).show();
 					return;
 				}

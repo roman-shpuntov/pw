@@ -44,6 +44,9 @@ public class LoginActivity extends AppCompatActivity implements PWState.PWStateI
 	}
 
 	@Override
+	public void onMessage(PWError error) {}
+
+	@Override
 	public void onInTransaction(PWTransaction trans) {}
 
 	@Override
@@ -76,10 +79,24 @@ public class LoginActivity extends AppCompatActivity implements PWState.PWStateI
 		mSignin.setOnClickListener(new View.OnClickListener() {
 			@Override
 			public void onClick(View view) {
-				int rc = PWState.getInstance().login(mEmail.getText().toString(), mPassword.getText().toString());
+				String	email	= mEmail.getText().toString();
+				String	passwd	= mPassword.getText().toString();
+
+				if (!PWChecker.isCorrectEmail(email)) {
+					Toast.makeText(LoginActivity.this, "Please provide correct email.", Toast.LENGTH_LONG).show();
+					return;
+				}
+
+				if (!PWChecker.isCorrectPassword(passwd)) {
+					Toast.makeText(LoginActivity.this, "Please provide correct password (min " +
+						PWChecker.PASSWORD_MIN_LENGTH + " and max " + PWChecker.PASSWORD_MAX_LENGTH + " symbols).", Toast.LENGTH_LONG).show();
+					return;
+				}
+
+				int rc = PWState.getInstance().login(email, passwd);
 				if (rc != 0) {
 					PWLog.error("Login failed on login");
-					Toast.makeText(LoginActivity.this, "Something wrong on login. Please try again later", Toast.LENGTH_LONG).show();
+					Toast.makeText(LoginActivity.this, "Something wrong on login. Please try again later.", Toast.LENGTH_LONG).show();
 				}
 				else {
 					mProgress.setVisibility(View.VISIBLE);
@@ -89,8 +106,11 @@ public class LoginActivity extends AppCompatActivity implements PWState.PWStateI
 		});
 
 		// DEBUG
-		mEmail.setText("email123@domain.com");
-		mPassword.setText("password123");
+		//mEmail.setText("email123@domain.com");
+		//mPassword.setText("password123");
+
+		mEmail.setText("email456@domain.com");
+		mPassword.setText("password456");
 	}
 
 	@Override
