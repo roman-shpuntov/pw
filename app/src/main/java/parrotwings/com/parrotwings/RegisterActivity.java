@@ -79,8 +79,10 @@ public class RegisterActivity extends AppCompatActivity implements PWState.PWSta
 			@Override
 			public void onClick(View view) {
 				int rc = PWState.getInstance().register(mName.getText().toString(), mEmail.getText().toString(), mPassword.getText().toString());
-				if (rc != 0)
+				if (rc != 0) {
+					PWLog.error("Register failed on register");
 					Toast.makeText(RegisterActivity.this, "Something wrong on registration. Please try again later", Toast.LENGTH_LONG).show();
+				}
 				else {
 					mProgress.setVisibility(View.VISIBLE);
 					enableUI(false);

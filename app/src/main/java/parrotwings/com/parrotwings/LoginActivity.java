@@ -77,8 +77,10 @@ public class LoginActivity extends AppCompatActivity implements PWState.PWStateI
 			@Override
 			public void onClick(View view) {
 				int rc = PWState.getInstance().login(mEmail.getText().toString(), mPassword.getText().toString());
-				if (rc != 0)
+				if (rc != 0) {
+					PWLog.error("Login failed on login");
 					Toast.makeText(LoginActivity.this, "Something wrong on login. Please try again later", Toast.LENGTH_LONG).show();
+				}
 				else {
 					mProgress.setVisibility(View.VISIBLE);
 					enableUI(false);

@@ -26,7 +26,7 @@ public class PWAppCompatActivity extends AppCompatActivity {
 			getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
 
 			Bitmap bitmap = PWGradient.bitmapGradient((int) (displayMetrics.widthPixels * displayMetrics.density), 1,
-					getResources().getColor(R.color.mainGradientStart), getResources().getColor(R.color.mainGradientEnd));
+					getResources().getColor(R.color.colorGradientStart), getResources().getColor(R.color.colorGradientEnd));
 			BitmapDrawable background = new BitmapDrawable(getResources(), bitmap);
 			bar.setBackgroundDrawable(background);
 		}

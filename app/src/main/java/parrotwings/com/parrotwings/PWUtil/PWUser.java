@@ -17,6 +17,7 @@ public class PWUser {
 	private	String						mToken = "";
 	private long						mBalance = 0;
 	private List<PWTransaction>			mTrans = new ArrayList<>();
+	private ArrayList<String>			mUsers = new ArrayList<>();
 
 	private	Comparator<PWTransaction>	mDateComparator = new Comparator<PWTransaction>() {
 		public int compare(PWTransaction obj1, PWTransaction obj2) {
@@ -116,6 +117,18 @@ public class PWUser {
 		return itrans;
 	}
 
+	public void syncUsers(List<PWTransaction> trans) {
+		ArrayList<String>	users = new ArrayList<>();
+		for (PWTransaction t : mTrans)
+			users.add(t.getUserName());
+
+		HashSet<String> hashSet = new HashSet<>();
+		hashSet.addAll(users);
+
+		mUsers.clear();
+		mUsers.addAll(hashSet);
+	}
+
 	public List<PWTransaction> getTransactions() {
 		return mTrans;
 	}
@@ -136,17 +149,6 @@ public class PWUser {
 	}
 
 	public List<String> getUserList() {
-		ArrayList<String>	users = new ArrayList<>();
-
-		for (PWTransaction trans : mTrans)
-			users.add(trans.getUserName());
-
-		HashSet<String> hashSet = new HashSet<>();
-		hashSet.addAll(users);
-
-		users.clear();
-		users.addAll(hashSet);
-
-		return users;
+		return mUsers;
 	}
 }

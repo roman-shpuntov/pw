@@ -2,6 +2,7 @@ package parrotwings.com.parrotwings.PWUtil;
 
 import org.json.JSONObject;
 
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
@@ -53,23 +54,22 @@ public class PWParser implements PWConnection.PWConnectionInterface {
 	private	static final String		AUTHORIZATION		= "Authorization";
 	private	static final String		BEARER				= "Bearer";
 
-	private	static final int		REQUEST_NONE		= 0;
-	private	static final int		REQUEST_REGISTER	= 1;
-	private	static final int		REQUEST_LOGIN		= 2;
-	private	static final int		REQUEST_LIST		= 3;
-	private	static final int		REQUEST_TRANSACTION	= 4;
-	private	static final int		REQUEST_INFO		= 5;
-	private	static final int		REQUEST_FILTER		= 6;
+	private	static final int		REQUEST_NONE		= PWConnection.INVALID_REQUEST;
+	private	static final int		REQUEST_REGISTER	= REQUEST_NONE + 1;
+	private	static final int		REQUEST_LOGIN		= REQUEST_REGISTER + 1;
+	private	static final int		REQUEST_LIST		= REQUEST_LOGIN + 1;
+	private	static final int		REQUEST_TRANSACTION	= REQUEST_LIST + 1;
+	private	static final int		REQUEST_INFO		= REQUEST_TRANSACTION + 1;
+	private	static final int		REQUEST_FILTER		= REQUEST_INFO + 1;
 
 	private List<PWParserInterface>		mListeners;
-	private int							mRequest;
 	private PWConnection				mConnection;
 
 	@Override
-	public void onRecv(PWError result) {
-		PWLog.debug("pwparser recv result code " + result.getCode() + " description " + result.getDescription() + " request " + mRequest);
+	public void onRecv(int request, PWError result) {
+		//PWLog.verbose("pwparser recv result code " + result.getCode() + " description " + result.getDescription() + " request " + request);
 
-		switch (mRequest) {
+		switch (request) {
 			case REQUEST_REGISTER: {
 				ListIterator<PWParserInterface> itr = mListeners.listIterator();
 				while (itr.hasNext()) {
@@ -121,8 +121,6 @@ public class PWParser implements PWConnection.PWConnectionInterface {
 			default:
 				break;
 		}
-
-		mRequest = REQUEST_NONE;
 	}
 
 	public void addListener(PWParserInterface listener) {
@@ -134,20 +132,12 @@ public class PWParser implements PWConnection.PWConnectionInterface {
 	}
 
 	public PWParser() {
-		mRequest = REQUEST_NONE;
 		mListeners = new LinkedList<>();
 		mConnection = new PWConnection(API_BASE_URL);
 		mConnection.addListener(this);
 	}
 
-	private boolean isBusy() {
-		return mRequest != REQUEST_NONE;
-	}
-
 	public int register(PWUser user) {
-		if (isBusy())
-			return -1;
-
 		JSONObject payload = new JSONObject();
 		try {
 			payload.put("username", user.getName());
@@ -168,6 +158,7 @@ public class PWParser implements PWConnection.PWConnectionInterface {
 
 		JSONObject json = new JSONObject();
 		try {
+			json.put(PWConnection.OBJECT_REQUEST, REQUEST_REGISTER);
 			json.put(PWConnection.OBJECT_TYPE, PWConnection.TYPE_POST);
 			json.put(PWConnection.OBJECT_URL, API_REGISTER);
 			json.put(PWConnection.OBJECT_PAYLOAD, payload);
@@ -177,18 +168,10 @@ public class PWParser implements PWConnection.PWConnectionInterface {
 			return -1;
 		}
 
-		mRequest = REQUEST_REGISTER;
-		int rc = mConnection.send(json);
-		if (rc != 0)
-			mRequest = REQUEST_NONE;
-
-		return rc;
+		return mConnection.send(json);
 	}
 
 	public int login(PWUser user) {
-		if (isBusy())
-			return -1;
-
 		JSONObject payload = new JSONObject();
 		try {
 			payload.put("email", user.getEmail());
@@ -208,6 +191,7 @@ public class PWParser implements PWConnection.PWConnectionInterface {
 
 		JSONObject json = new JSONObject();
 		try {
+			json.put(PWConnection.OBJECT_REQUEST, REQUEST_LOGIN);
 			json.put(PWConnection.OBJECT_TYPE, PWConnection.TYPE_POST);
 			json.put(PWConnection.OBJECT_URL, API_LOGIN);
 			json.put(PWConnection.OBJECT_PAYLOAD, payload);
@@ -217,18 +201,10 @@ public class PWParser implements PWConnection.PWConnectionInterface {
 			return -1;
 		}
 
-		mRequest = REQUEST_LOGIN;
-		int rc = mConnection.send(json);
-		if (rc != 0)
-			mRequest = REQUEST_NONE;
-
-		return rc;
+		return mConnection.send(json);
 	}
 
 	public int info(PWUser user) {
-		if (isBusy())
-			return -1;
-
 		JSONObject header = new JSONObject();
 		try {
 			header.put(AUTHORIZATION, BEARER + " " + user.getToken());
@@ -239,6 +215,7 @@ public class PWParser implements PWConnection.PWConnectionInterface {
 
 		JSONObject json = new JSONObject();
 		try {
+			json.put(PWConnection.OBJECT_REQUEST, REQUEST_INFO);
 			json.put(PWConnection.OBJECT_TYPE, PWConnection.TYPE_GET);
 			json.put(PWConnection.OBJECT_URL, API_INFO);
 			json.put(PWConnection.OBJECT_HEADER, header);
@@ -247,18 +224,10 @@ public class PWParser implements PWConnection.PWConnectionInterface {
 			return -1;
 		}
 
-		mRequest = REQUEST_INFO;
-		int rc = mConnection.send(json);
-		if (rc != 0)
-			mRequest = REQUEST_NONE;
-
-		return rc;
+		return mConnection.send(json);
 	}
 
 	public int list(PWUser user) {
-		if (isBusy())
-			return -1;
-
 		JSONObject header = new JSONObject();
 		try {
 			header.put(AUTHORIZATION, BEARER + " " + user.getToken());
@@ -269,6 +238,7 @@ public class PWParser implements PWConnection.PWConnectionInterface {
 
 		JSONObject json = new JSONObject();
 		try {
+			json.put(PWConnection.OBJECT_REQUEST, REQUEST_LIST);
 			json.put(PWConnection.OBJECT_TYPE, PWConnection.TYPE_GET);
 			json.put(PWConnection.OBJECT_URL, API_LIST);
 			json.put(PWConnection.OBJECT_HEADER, header);
@@ -277,18 +247,10 @@ public class PWParser implements PWConnection.PWConnectionInterface {
 			return -1;
 		}
 
-		mRequest = REQUEST_LIST;
-		int rc = mConnection.send(json);
-		if (rc != 0)
-			mRequest = REQUEST_NONE;
-
-		return rc;
+		return mConnection.send(json);
 	}
 
 	public int transaction(PWUser user, String name, long amount) {
-		if (isBusy())
-			return -1;
-
 		JSONObject payload = new JSONObject();
 		try {
 			payload.put("name", name);
@@ -309,6 +271,7 @@ public class PWParser implements PWConnection.PWConnectionInterface {
 
 		JSONObject json = new JSONObject();
 		try {
+			json.put(PWConnection.OBJECT_REQUEST, REQUEST_TRANSACTION);
 			json.put(PWConnection.OBJECT_TYPE, PWConnection.TYPE_POST);
 			json.put(PWConnection.OBJECT_URL, API_TRANSACTION);
 			json.put(PWConnection.OBJECT_PAYLOAD, payload);
@@ -318,15 +281,8 @@ public class PWParser implements PWConnection.PWConnectionInterface {
 			return -1;
 		}
 
-		mRequest = REQUEST_TRANSACTION;
-		int rc = mConnection.send(json);
-		if (rc != 0)
-			mRequest = REQUEST_NONE;
-
-		return rc;
+		return mConnection.send(json);
 	}
 
-	public void logout() {
-		mRequest = REQUEST_NONE;
-	}
+	public void logout() {}
 }

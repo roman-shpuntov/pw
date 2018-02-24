@@ -10,6 +10,8 @@
 	<color name="colorButtonFocused">@android:color/transparent</color>
 	<color name="colorButtonShapeStart">@android:color/transparent</color>
 	<color name="colorButtonShapeEnd">@android:color/transparent</color>
-	<color name="mainGradientStart">#ae6ac5</color>
-	<color name="mainGradientEnd">#6e0094</color>
+	<color name="colorGradientStart">#ae6ac5</color>
+	<color name="colorGradientEnd">#6e0094</color>
+	<color name="colorBackEmpty">#B0B0B0</color>
+	<color name="colorFrontEmpty">#808080</color>
 </resources>

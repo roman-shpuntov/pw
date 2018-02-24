@@ -25,6 +25,7 @@ public class MainActivity extends PWAppCompatActivity implements PWState.PWState
 	private TextView		mName;
 	private TextView		mBalance;
 	private ListView		mList;
+	private TextView		mEmpty;
 	private MainAdapter		mAdapter;
 	private	PWTransaction	mNewTrans;
 
@@ -53,6 +54,7 @@ public class MainActivity extends PWAppCompatActivity implements PWState.PWState
 					Toast.LENGTH_LONG).show();
 
 				updateInfo();
+				mEmpty.setVisibility(View.GONE);
 				mAdapter.notifyDataSetChanged();
 			}
 		});
@@ -68,6 +70,7 @@ public class MainActivity extends PWAppCompatActivity implements PWState.PWState
 					Toast.LENGTH_LONG).show();
 
 				updateInfo();
+				mEmpty.setVisibility(View.GONE);
 				mAdapter.notifyDataSetChanged();
 			}
 		});
@@ -88,6 +91,7 @@ public class MainActivity extends PWAppCompatActivity implements PWState.PWState
 		mName		= findViewById(R.id.main_user);
 		mBalance	= findViewById(R.id.main_balance);
 		mList		= findViewById(R.id.main_list);
+		mEmpty		= findViewById(R.id.main_empty);
 
 		PWState.getInstance().getUser().sortTransactionsByDate();
 		mAdapter = new MainAdapter(this, PWState.getInstance().getUser().getTransactions());
@@ -106,7 +110,14 @@ public class MainActivity extends PWAppCompatActivity implements PWState.PWState
 
 		mAdapter.notifyDataSetChanged();
 
+		if (PWState.getInstance().getUser().getTransactions().size() == 0)
+			mEmpty.setVisibility(View.VISIBLE);
+		else
+			mEmpty.setVisibility(View.GONE);
+
 		PWState.getInstance().addListener(this);
+
+		Toast.makeText(MainActivity.this, "Welcome to " + getResources().getString(R.string.app_name) + " system.", Toast.LENGTH_SHORT).show();
 	}
 
 	@Override

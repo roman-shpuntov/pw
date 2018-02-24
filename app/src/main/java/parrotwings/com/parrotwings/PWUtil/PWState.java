@@ -174,10 +174,10 @@ public class PWState implements PWParser.PWParserInterface {
 				Date		date = new Date(item.getString(PWParser.API_LIST_DATE));
 
 				trans = new PWTransaction(
-						item.getLong(PWParser.API_LIST_ID), date,
-						item.getLong(PWParser.API_LIST_AMOUNT),
-						item.getLong(PWParser.API_LIST_BALANCE),
-						item.getString(PWParser.API_LIST_USERNAME));
+					item.getLong(PWParser.API_LIST_ID), date,
+					item.getLong(PWParser.API_LIST_AMOUNT),
+					item.getLong(PWParser.API_LIST_BALANCE),
+					item.getString(PWParser.API_LIST_USERNAME));
 
 				xtrans.add(trans);
 			}
@@ -199,6 +199,7 @@ public class PWState implements PWParser.PWParserInterface {
 				mUser.setBalance(balance);
 			}
 		}
+		mUser.syncUsers(xtrans);
 
 		return 0;
 	}
@@ -220,7 +221,7 @@ public class PWState implements PWParser.PWParserInterface {
 			id = tok.getLong(PWParser.API_TRANS_ID);
 
 			PWTransaction trans = new PWTransaction(
-					id, date, amount, balance, name);
+				id, date, amount, balance, name);
 
 			mOutTransList.add(trans);
 		}
@@ -232,6 +233,7 @@ public class PWState implements PWParser.PWParserInterface {
 		if (name == null)
 			return -1;
 
+		mUser.syncUsers(mOutTransList);
 		mUser.setBalance(balance);
 
 		return 0;

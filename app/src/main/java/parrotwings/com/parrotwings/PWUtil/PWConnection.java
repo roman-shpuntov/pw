@@ -29,16 +29,19 @@ import java.util.ListIterator;
 
 public class PWConnection {
 	public interface PWConnectionInterface {
-		void onRecv(PWError result);
+		void onRecv(int request, PWError result);
 	}
 
 	private	HttpClient						mClient;
 	private List<PWConnectionInterface>		mListeners;
 	private	String							mBaseURL;
 
+	public static final int					INVALID_REQUEST		= 0;
+
 	public static final String				TYPE_POST			= "POST";
 	public static final String				TYPE_GET			= "GET";
 
+	public static final String				OBJECT_REQUEST		= "REQUEST";
 	public static final String				OBJECT_TYPE			= "TYPE";
 	public static final String				OBJECT_URL			= "URL";
 	public static final String				OBJECT_PAYLOAD		= "PAYLOAD";
@@ -153,42 +156,57 @@ public class PWConnection {
 		return new PWError(code, result);
 	}
 
-	private class HttpJSONAsyncTask extends AsyncTask<JSONObject, Void, PWError> {
+	private class HTTPResponse {
+		PWError	error	= new PWError(PWError.GENERAL_ERROR, PWError.GENERAL_ERROR_DESC);
+		int		request	= INVALID_REQUEST;
+
+		HTTPResponse() {}
+
+		HTTPResponse(int r) {
+			request = r;
+		}
+
+		HTTPResponse(PWError e, int r) {
+			error = e;
+			request = r;
+		}
+	}
+
+	private class HttpJSONAsyncTask extends AsyncTask<JSONObject, Void, HTTPResponse> {
 		@Override
-		protected PWError doInBackground(JSONObject... json) {
+		protected HTTPResponse doInBackground(JSONObject... json) {
 			String	type;
+			int		req = INVALID_REQUEST;
 			try {
-				type = json[0].getString(OBJECT_TYPE);
+				type	= json[0].getString(OBJECT_TYPE);
+				req		= json[0].getInt(OBJECT_REQUEST);
 			} catch (Exception e) {
 				PWLog.error("pwconnection no type");
-				return new PWError(PWError.GENERAL_ERROR, PWError.GENERAL_ERROR_DESC);
+				return new HTTPResponse(req);
 			}
 
 			if (type.compareTo(TYPE_POST) == 0)
-				return postRequest(json[0]);
+				return new HTTPResponse(postRequest(json[0]), req);
 			else if (type.compareTo(TYPE_GET) == 0)
-				return getRequest(json[0]);
+				return new HTTPResponse(getRequest(json[0]), req);
 
-			return new PWError(PWError.GENERAL_ERROR, PWError.GENERAL_ERROR_DESC);
+			return new HTTPResponse(req);
 		}
 
 		@Override
-		protected void onPostExecute(PWError result) {
-			PWLog.debug("pwconnection result " + result);
+		protected void onPostExecute(HTTPResponse result) {
+			//PWLog.verbose("pwconnection result " + result.error.getDescription());
 
 			ListIterator<PWConnectionInterface> itr = mListeners.listIterator();
 			while (itr.hasNext()) {
 				PWConnectionInterface iface = itr.next();
-				iface.onRecv(result);
+				iface.onRecv(result.request, result.error);
 			}
 		}
 	}
 
 	public int send(JSONObject json) {
 		AsyncTask	task = new HttpJSONAsyncTask().execute(json);
-		if (task == null)
-			return -1;
-
-		return 0;
+		return (task == null)?-1:0;
 	}
 }
