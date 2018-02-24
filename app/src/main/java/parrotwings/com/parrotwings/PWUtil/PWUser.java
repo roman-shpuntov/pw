@@ -89,7 +89,7 @@ public class PWUser {
 		return mBalance;
 	}
 
-	public List<PWTransaction> syncTransactions(List<PWTransaction> trans) {
+	public List<PWTransaction> syncTransactionsAndUsers(List<PWTransaction> trans) {
 		List<PWTransaction>	itrans = new ArrayList<>();
 		long count = 0;
 
@@ -111,13 +111,15 @@ public class PWUser {
 			}
 		}
 
-		if (count != 0)
+		if (count != 0) {
 			Collections.sort(mTrans, mComparator);
+			syncUsers();
+		}
 
 		return itrans;
 	}
 
-	public void syncUsers(List<PWTransaction> trans) {
+	public void syncUsers() {
 		ArrayList<String>	users = new ArrayList<>();
 		for (PWTransaction t : mTrans)
 			users.add(t.getUserName());
@@ -131,6 +133,10 @@ public class PWUser {
 
 	public List<PWTransaction> getTransactions() {
 		return mTrans;
+	}
+
+	public void addTransaction(PWTransaction trans) {
+		mTrans.add(trans);
 	}
 
 	public void sortTransactionsByDate() {

@@ -187,7 +187,7 @@ public class PWState implements PWParser.PWParserInterface {
 			return -1;
 		}
 
-		List<PWTransaction>	itrans = mUser.syncTransactions(xtrans);
+		List<PWTransaction>	itrans = mUser.syncTransactionsAndUsers(xtrans);
 		if (mNewState == STATE_READY) {
 			if (itrans.size() != 0) {
 				mInTransList.addAll(itrans);
@@ -199,7 +199,6 @@ public class PWState implements PWParser.PWParserInterface {
 				mUser.setBalance(balance);
 			}
 		}
-		mUser.syncUsers(xtrans);
 
 		return 0;
 	}
@@ -211,6 +210,7 @@ public class PWState implements PWParser.PWParserInterface {
 		String name		= null;
 		Date date		= null;
 
+		PWTransaction	trans = null;
 		try {
 			JSONObject object = new JSONObject(result);
 			JSONObject tok = object.getJSONObject(PWParser.API_TRANS_TOKEN);
@@ -220,21 +220,20 @@ public class PWState implements PWParser.PWParserInterface {
 			amount = tok.getLong(PWParser.API_TRANS_AMOUNT);
 			id = tok.getLong(PWParser.API_TRANS_ID);
 
-			PWTransaction trans = new PWTransaction(
-				id, date, amount, balance, name);
-
-			mOutTransList.add(trans);
+			trans = new PWTransaction(id, date, amount, balance, name);
 		}
 		catch (Exception e) {
 			PWLog.error("pwstate failed on extractTransaction json");
 			return -1;
 		}
 
-		if (name == null)
+		if (trans == null)
 			return -1;
 
-		mUser.syncUsers(mOutTransList);
+		mUser.addTransaction(trans);
+		mUser.syncUsers();
 		mUser.setBalance(balance);
+		mOutTransList.add(trans);
 
 		return 0;
 	}
