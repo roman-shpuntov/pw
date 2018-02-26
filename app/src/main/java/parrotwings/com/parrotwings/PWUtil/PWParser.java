@@ -203,10 +203,10 @@ public class PWParser implements PWConnection.PWConnectionInterface {
 		return mConnection.send(json);
 	}
 
-	public int info(PWUser user) {
+	public int info(PWUser user, String token) {
 		JSONObject header = new JSONObject();
 		try {
-			header.put(AUTHORIZATION, BEARER + " " + user.getToken());
+			header.put(AUTHORIZATION, BEARER + " " + token);
 		} catch (Exception e) {
 			PWLog.error("pwparser info failed on header.put");
 			return -1;
@@ -226,10 +226,10 @@ public class PWParser implements PWConnection.PWConnectionInterface {
 		return mConnection.send(json);
 	}
 
-	public int list(PWUser user) {
+	public int list(PWUser user, String token) {
 		JSONObject header = new JSONObject();
 		try {
-			header.put(AUTHORIZATION, BEARER + " " + user.getToken());
+			header.put(AUTHORIZATION, BEARER + " " + token);
 		} catch (Exception e) {
 			PWLog.error("pwparser list failed on header.put");
 			return -1;
@@ -249,7 +249,7 @@ public class PWParser implements PWConnection.PWConnectionInterface {
 		return mConnection.send(json);
 	}
 
-	public int transaction(PWUser user, String name, long amount) {
+	public int transaction(PWUser user, String token, String name, long amount) {
 		JSONObject payload = new JSONObject();
 		try {
 			payload.put("name", name);
@@ -262,7 +262,7 @@ public class PWParser implements PWConnection.PWConnectionInterface {
 		JSONObject header = new JSONObject();
 		try {
 			header.put(CONTENT_TYPE, APPLICATION_JSON);
-			header.put(AUTHORIZATION, BEARER + " " + user.getToken());
+			header.put(AUTHORIZATION, BEARER + " " + token);
 		} catch (Exception e) {
 			PWLog.error("pwparser transaction failed on header.put");
 			return -1;
@@ -283,5 +283,7 @@ public class PWParser implements PWConnection.PWConnectionInterface {
 		return mConnection.send(json);
 	}
 
-	public void logout() {}
+	public void logout() {
+		mConnection.close();
+	}
 }

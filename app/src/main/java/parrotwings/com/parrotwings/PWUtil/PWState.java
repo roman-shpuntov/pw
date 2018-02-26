@@ -7,11 +7,13 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by roman on 21.02.2018.
@@ -26,11 +28,71 @@ public class PWState implements PWParser.PWParserInterface {
 		void onOutTransaction(PWTransaction trans);
 	}
 
+	private class PWXUser extends PWUser {
+		private	String						mToken = "";
+		private long						mBalance = 0;
+		private List<PWTransaction>			mTrans = new ArrayList<>();
+
+		PWXUser() {
+			super();
+		}
+
+		PWXUser(PWUser user) {
+			super(user.getName(), user.getEmail(), user.getPassword());
+		}
+
+		public void setToken(String token) {
+			mToken = token;
+		}
+
+		public void setBalance(long balance) {
+			mBalance = balance;
+		}
+
+		public String getToken() {
+			return mToken;
+		}
+
+		public long getBalance() {
+			return mBalance;
+		}
+
+		public List<PWTransaction> syncTransactions(List<PWTransaction> trans) {
+			List<PWTransaction>	itrans = new ArrayList<>();
+			long count = 0;
+
+			for (PWTransaction t : trans) {
+				long id = t.getID();
+				boolean find = false;
+				for (PWTransaction etrans : mTrans) {
+					if (id == etrans.getID()) {
+						find = true;
+						count++;
+						break;
+					}
+				}
+
+				if (!find) {
+					mTrans.add(t);
+					if (t.getAmount() > 0)
+						itrans.add(t);
+				}
+			}
+
+			return itrans;
+		}
+
+		public List<PWTransaction> getTransactions() {
+			return new ArrayList<>(mTrans);
+		}
+
+		public void addTransaction(PWTransaction trans) {
+			mTrans.add(trans);
+		}
+	}
+
 	private	static final int	STATE_NONE				= 0;
-	private	static final int	STATE_LOGGEDIN			= 1;
-	private	static final int	STATE_REGISTERED		= 2;
-	private	static final int	STATE_LIST				= 3;
-	private	static final int	STATE_READY				= 4;
+	private	static final int	STATE_READY				= 1;
 
 	private	static final String	REGISTER_EXIST_ERROR	= "A user with that email already exists";
 	private	static final String	REGISTER_NO_INFO_ERROR	= "You must send username and password";
@@ -40,15 +102,12 @@ public class PWState implements PWParser.PWParserInterface {
 
 	private static volatile PWState		mInstance;
 	private List<PWStateInterface>		mListeners;
-	private PWUser						mUser;
-	private int							mOldState;
-	private int							mNewState;
+	private PWXUser						mUser;
+	private int							mState;
 	private Timer						mTimer;
-	private List<PWTransaction>			mOutTransList;
-	private List<PWTransaction>			mInTransList;
-	private List<PWError>				mErrors;
-	private List<PWError>				mMessages;
 	private PWParser					mParser;
+	private AtomicInteger				mListCounter;
+	private boolean						mReadyNotified;
 
 	private PWError generalErrorWihError(PWError error) {
 		return new PWError(error.getCode(), PWError.GENERAL_ERROR_DESC + " System message: " + error.getDescription());
@@ -60,25 +119,25 @@ public class PWState implements PWParser.PWParserInterface {
 			if (!result.isHTTPSuccess()) {
 				String	s = result.getDescription();
 				if (s.compareTo(REGISTER_EXIST_ERROR) == 0)
-					mErrors.add(new PWError(result.getCode(), s + ". Please provide another email."));
+					notifyError(new PWError(result.getCode(), s + ". Please provide another email."));
 				else if (s.compareTo(REGISTER_NO_INFO_ERROR) == 0)
-					mErrors.add(new PWError(result.getCode(), "Please provide another username, email and password."));
+					notifyError(new PWError(result.getCode(), "Please provide another username, email and password."));
 				else
-					mErrors.add(generalErrorWihError(result));
+					notifyError(generalErrorWihError(result));
 
 				return;
 			}
 
-			mErrors.add(result);
+			notifyError(result);
 			return;
 		}
 
 		if (extractToken(result.getDescription()) == 0) {
-			mNewState = STATE_REGISTERED;
+			mParser.info(mUser, mUser.getToken());
 			return;
 		}
 
-		mErrors.add(new PWError());
+		notifyError(new PWError());
 	}
 
 	@Override
@@ -87,71 +146,78 @@ public class PWState implements PWParser.PWParserInterface {
 			if (!result.isHTTPSuccess()) {
 				String	s = result.getDescription();
 				if (s.compareTo(LOGIN_NO_INFO_ERROR) == 0)
-					mErrors.add(new PWError(result.getCode(), "Please provide email and password."));
+					notifyError(new PWError(result.getCode(), "Please provide email and password."));
 				else if (s.compareTo(LOGIN_EMAIL_PWD_ERROR) == 0)
-					mErrors.add(new PWError(result.getCode(), "Please provide correct email and password."));
+					notifyError(new PWError(result.getCode(), "Please provide correct email and password."));
 				else
-					mErrors.add(generalErrorWihError(result));
+					notifyError(generalErrorWihError(result));
 
 				return;
 			}
 
-			mErrors.add(result);
+			notifyError(result);
 			return;
 		}
 
 		if (extractToken(result.getDescription()) == 0) {
-			mNewState = STATE_LOGGEDIN;
+			mParser.info(mUser, mUser.getToken());
 			return;
 		}
 
-		mErrors.add(new PWError());
+		notifyError(new PWError());
 	}
 
 	@Override
 	public void onResponseInfo(PWError result) {
 		if (!result.isSuccess()) {
-			mErrors.add(generalErrorWihError(result));
+			notifyError(generalErrorWihError(result));
 			return;
 		}
 
 		if (extractInfo(result.getDescription()) == 0) {
-			mNewState = STATE_LIST;
+			mListCounter.incrementAndGet();
+			mParser.list(mUser, mUser.getToken());
 			return;
 		}
 
-		mErrors.add(new PWError());
+		notifyError(new PWError());
 	}
 
 	@Override
 	public void onResponseList(PWError result) {
+		mListCounter.decrementAndGet();
+
 		if (!result.isSuccess()) {
-			mErrors.add(generalErrorWihError(result));
+			notifyError(generalErrorWihError(result));
 			return;
 		}
 
 		if (extractList(result.getDescription()) == 0) {
-			mNewState = STATE_READY;
+			if (!mReadyNotified) {
+				mState = STATE_READY;
+				notifyOnReady();
+				mReadyNotified = true;
+			}
 			return;
 		}
 
-		mErrors.add(new PWError());
+		notifyError(new PWError());
 	}
 
 	@Override
 	public void onResponseTransaction(PWError result) {
 		if (!result.isSuccess()) {
 			if (!result.isHTTPSuccess())
-				mMessages.add(new PWError(result.getCode(), "System message: " + result.getDescription()));
+				notifyMessage(new PWError(result.getCode(), "System message: " + result.getDescription()));
 			else
-				mErrors.add(generalErrorWihError(result));
+				notifyError(generalErrorWihError(result));
 			return;
 		}
 
 		if (extractTransaction(result.getDescription()) == 0)
 			return;
 
-		mErrors.add(new PWError());
+		notifyError(new PWError());
 	}
 
 	private int extractToken(String result) {
@@ -228,16 +294,12 @@ public class PWState implements PWParser.PWParserInterface {
 			return -1;
 		}
 
-		List<PWTransaction>	itrans = mUser.syncTransactionsAndUsers(xtrans);
-		if (mNewState == STATE_READY) {
+		List<PWTransaction>	itrans = mUser.syncTransactions(xtrans);
+		if (mState == STATE_READY) {
 			if (itrans.size() != 0) {
-				mInTransList.addAll(itrans);
-
-				long balance = 0;
-				for (PWTransaction t : itrans)
-					balance += t.getBalance();
-
-				mUser.setBalance(balance);
+				int last = itrans.size() - 1;
+				mUser.setBalance(itrans.get(last).getBalance());
+				notifyInTrans(itrans);
 			}
 		}
 
@@ -272,84 +334,79 @@ public class PWState implements PWParser.PWParserInterface {
 			return -1;
 
 		mUser.addTransaction(trans);
-		mUser.syncUsers();
 		mUser.setBalance(balance);
-		mOutTransList.add(trans);
+		notifyOutTrans(trans);
 
 		return 0;
+	}
+
+	private void notifyError(PWError error) {
+		List<PWStateInterface> llist = getListeners();
+
+		ListIterator<PWStateInterface> itr = llist.listIterator();
+		while (itr.hasNext()) {
+			PWStateInterface iface = itr.next();
+			iface.onError(error);
+		}
+	}
+
+	private void notifyMessage(PWError message) {
+		List<PWStateInterface> llist = getListeners();
+
+		ListIterator<PWStateInterface> itr = llist.listIterator();
+		while (itr.hasNext()) {
+			PWStateInterface iface = itr.next();
+			iface.onMessage(message);
+		}
+	}
+
+	private void notifyOutTrans(PWTransaction trans) {
+		List<PWStateInterface> llist = getListeners();
+
+		ListIterator<PWStateInterface> itr = llist.listIterator();
+		while (itr.hasNext()) {
+			PWStateInterface iface = itr.next();
+			iface.onOutTransaction(trans);
+		}
+	}
+
+	private void notifyInTrans(List<PWTransaction> trans) {
+		List<PWStateInterface> llist = getListeners();
+
+		for (PWTransaction t : trans) {
+			ListIterator<PWStateInterface> itr = llist.listIterator();
+			while (itr.hasNext()) {
+				PWStateInterface iface = itr.next();
+				iface.onInTransaction(t);
+			}
+		}
+	}
+
+	private void notifyOnReady() {
+		List<PWStateInterface> llist = getListeners();
+
+		ListIterator<PWStateInterface> itr = llist.listIterator();
+		while (itr.hasNext()) {
+			PWStateInterface iface = itr.next();
+			iface.onReady();
+		}
+	}
+
+	private List<PWStateInterface> getListeners() {
+		List<PWStateInterface> llist;
+		synchronized (mListeners) {
+			llist = new ArrayList<>(mListeners);
+		}
+
+		return llist;
 	}
 
 	class ProcessingTask extends TimerTask {
 		@Override
 		public void run() {
-			for (PWError error : mErrors) {
-				ListIterator<PWStateInterface> itr = mListeners.listIterator();
-				while (itr.hasNext()) {
-					PWStateInterface iface = itr.next();
-					iface.onError(error);
-				}
-			}
-			mErrors.clear();
-
-			for (PWError message : mMessages) {
-				ListIterator<PWStateInterface> itr = mListeners.listIterator();
-				while (itr.hasNext()) {
-					PWStateInterface iface = itr.next();
-					iface.onMessage(message);
-				}
-			}
-			mMessages.clear();
-
-			if (mNewState != mOldState) {
-				mOldState = mNewState;
-
-				switch (mNewState) {
-					case STATE_LOGGEDIN:
-					case STATE_REGISTERED:
-						mParser.info(mUser);
-						break;
-
-					case STATE_LIST:
-						mParser.list(mUser);
-						break;
-
-					case STATE_READY:
-						ListIterator<PWStateInterface> itr = mListeners.listIterator();
-						while (itr.hasNext()) {
-							PWStateInterface iface = itr.next();
-							iface.onReady();
-						}
-						break;
-
-					default:
-						break;
-				}
-			}
-
-			if (mNewState == STATE_READY) {
-				if (mOutTransList.size() != 0) {
-					PWTransaction trans = mOutTransList.get(0);
-					mOutTransList.remove(0);
-
-					ListIterator<PWStateInterface> itr = mListeners.listIterator();
-					while (itr.hasNext()) {
-						PWStateInterface iface = itr.next();
-						iface.onOutTransaction(trans);
-					}
-				}
-
-				if (mInTransList.size() != 0) {
-					PWTransaction trans = mInTransList.get(0);
-					mInTransList.remove(0);
-
-					ListIterator<PWStateInterface> itr = mListeners.listIterator();
-					while (itr.hasNext()) {
-						PWStateInterface iface = itr.next();
-						iface.onInTransaction(trans);
-					}
-				}
-
-				mParser.list(mUser);
+			if (mState == STATE_READY) {
+				if (mListCounter.compareAndSet(0, 1))
+					mParser.list(mUser, mUser.getToken());
 			}
 		}
 	}
@@ -357,6 +414,8 @@ public class PWState implements PWParser.PWParserInterface {
 	private PWState() {
 		logout();
 		mListeners = new LinkedList<>();
+		mListCounter = new AtomicInteger(0);
+		mReadyNotified = false;
 	}
 
 	public static PWState getInstance() {
@@ -376,11 +435,23 @@ public class PWState implements PWParser.PWParserInterface {
 	}
 
 	public void addListener(PWStateInterface listener) {
-		mListeners.add(listener);
+		synchronized(mListeners) {
+			mListeners.add(listener);
+		}
 	}
 
 	public void removeListener(PWStateInterface listener) {
-		mListeners.remove(listener);
+		synchronized(mListeners) {
+			mListeners.remove(listener);
+		}
+	}
+
+	public List<PWTransaction> getTransactions() {
+		return mUser.getTransactions();
+	}
+
+	public long getBalance() {
+		return mUser.getBalance();
 	}
 
 	public void logout() {
@@ -399,30 +470,24 @@ public class PWState implements PWParser.PWParserInterface {
 			mTimer = null;
 		}
 
-		mErrors		= new ArrayList<>();
-		mMessages	= new ArrayList<>();
-		mOldState	= STATE_NONE;
-		mNewState	= STATE_NONE;
-		mUser		= new PWUser();
-
-		mInTransList	= new ArrayList<>();
-		mOutTransList	= new ArrayList<>();
+		mState		= STATE_NONE;
+		mUser		= new PWXUser();
 
 		mTimer = new Timer();
 		mTimer.schedule(new ProcessingTask(), 1000, 1000);
 	}
 
 	public int register(String name, String email, String password) {
-		mUser = new PWUser(name, email, password);
+		mUser = new PWXUser(new PWUser(name, email, password));
 		return mParser.register(mUser);
 	}
 
 	public int login(String email, String password) {
-		mUser = new PWUser(email, password);
+		mUser = new PWXUser(new PWUser(email, password));
 		return mParser.login(mUser);
 	}
 
 	public int transaction(String name, long amount) {
-		return mParser.transaction(mUser, name, amount);
+		return mParser.transaction(mUser, mUser.getToken(), name, amount);
 	}
 }
