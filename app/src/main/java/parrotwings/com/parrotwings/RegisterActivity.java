@@ -118,9 +118,9 @@ public class RegisterActivity extends AppCompatActivity implements PWState.PWSta
 		//mName.setText("username123");
 		//mPassword.setText("password123");
 
-		mEmail.setText("email456@domain.com");
-		mName.setText("username456");
-		mPassword.setText("password456");
+		//mEmail.setText("email456@domain.com");
+		//mName.setText("username456");
+		//mPassword.setText("password456");
 	}
 
 	@Override
