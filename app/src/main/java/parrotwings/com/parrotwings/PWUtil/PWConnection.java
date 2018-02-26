@@ -17,11 +17,17 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PipedWriter;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Created by roman on 21.02.2018.
@@ -35,6 +41,11 @@ public class PWConnection {
 	private	HttpClient						mClient;
 	private List<PWConnectionInterface>		mListeners;
 	private	String							mBaseURL;
+	private Thread							mThread;
+	private	List<JSONObject>				mTransfer;
+	private boolean							mRunning;
+	private Lock							mLock;
+	private Condition						mReady;
 
 	public static final String				REQUEST_INVALID		= "REQUEST_INVALID";
 
@@ -47,10 +58,67 @@ public class PWConnection {
 	public static final String				OBJECT_PAYLOAD		= "PAYLOAD";
 	public static final String				OBJECT_HEADER		= "HEADER";
 
+	private HTTPResponse doTransfer(JSONObject json) {
+		String	type;
+		String	req = REQUEST_INVALID;
+		try {
+			type	= json.getString(OBJECT_TYPE);
+			req		= json.getString(OBJECT_REQUEST);
+		} catch (Exception e) {
+			PWLog.error("pwconnection no type");
+			return new HTTPResponse(req);
+		}
+
+		if (type.compareTo(TYPE_POST) == 0)
+			return new HTTPResponse(postRequest(json), req);
+		else if (type.compareTo(TYPE_GET) == 0)
+			return new HTTPResponse(getRequest(json), req);
+
+		return new HTTPResponse(req);
+	}
+
 	public PWConnection(String baseURL) {
-		mBaseURL = baseURL;
-		mClient = new DefaultHttpClient();
-		mListeners = new LinkedList<>();
+		mBaseURL	= baseURL;
+		mClient		= new DefaultHttpClient();
+		mListeners	= new LinkedList<>();
+		mTransfer	= new ArrayList<>();
+		mRunning	= true;
+		mLock		= new ReentrantLock();
+		mReady		= mLock.newCondition();
+
+		mThread = new Thread(new Runnable() {
+			@Override
+			public void run() {
+				List<JSONObject> transfer = new ArrayList<>();
+
+				while (mRunning) {
+					mLock.lock();
+					try {
+						if (mTransfer.size() == 0)
+							mReady.await();
+						transfer.addAll(mTransfer);
+						mTransfer.clear();
+					} catch (InterruptedException e) {}
+					mLock.unlock();
+
+					PWLog.error("transfer.size " + transfer.size());
+
+					for (JSONObject json : transfer) {
+						HTTPResponse resp = doTransfer(json);
+
+						ListIterator<PWConnectionInterface> itr = mListeners.listIterator();
+						while (itr.hasNext()) {
+							PWConnectionInterface iface = itr.next();
+							iface.onRecv(resp.request, resp.error);
+						}
+					}
+
+					transfer.clear();
+				}
+			}
+		});
+
+		mThread.start();
 	}
 
 	public void addListener(PWConnectionInterface listener) {
@@ -174,41 +242,20 @@ public class PWConnection {
 		}
 	}
 
-	private class HttpJSONAsyncTask extends AsyncTask<JSONObject, Void, HTTPResponse> {
-		@Override
-		protected HTTPResponse doInBackground(JSONObject... json) {
-			String	type;
-			String	req = REQUEST_INVALID;
-			try {
-				type	= json[0].getString(OBJECT_TYPE);
-				req		= json[0].getString(OBJECT_REQUEST);
-			} catch (Exception e) {
-				PWLog.error("pwconnection no type");
-				return new HTTPResponse(req);
-			}
+	public int send(JSONObject json) {
+		mLock.lock();
+		mTransfer.add(json);
+		mReady.signal();
+		mLock.unlock();
 
-			if (type.compareTo(TYPE_POST) == 0)
-				return new HTTPResponse(postRequest(json[0]), req);
-			else if (type.compareTo(TYPE_GET) == 0)
-				return new HTTPResponse(getRequest(json[0]), req);
-
-			return new HTTPResponse(req);
-		}
-
-		@Override
-		protected void onPostExecute(HTTPResponse result) {
-			//PWLog.verbose("pwconnection result " + result.error.getDescription());
-
-			ListIterator<PWConnectionInterface> itr = mListeners.listIterator();
-			while (itr.hasNext()) {
-				PWConnectionInterface iface = itr.next();
-				iface.onRecv(result.request, result.error);
-			}
-		}
+		return 0;
 	}
 
-	public int send(JSONObject json) {
-		AsyncTask	task = new HttpJSONAsyncTask().execute(json);
-		return (task == null)?-1:0;
+	public void close() {
+		mRunning = false;
+
+		mLock.lock();
+		mReady.signal();
+		mLock.unlock();
 	}
 }
