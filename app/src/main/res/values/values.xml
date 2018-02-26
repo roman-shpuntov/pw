@@ -9,5 +9,6 @@
 	<dimen name="defaultMargin">10dp</dimen>
 	<dimen name="titleTextSize">20sp</dimen>
 	<dimen name="titleMainSpace">60dp</dimen>
+	<dimen name="titleTransSpace">80dp</dimen>
 	<dimen name="emptyTextSize">24sp</dimen>
 </resources>

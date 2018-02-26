@@ -36,7 +36,7 @@
 		app:layout_constraintTop_toTopOf="parent">
 
 	<AutoCompleteTextView
-		android:id="@+id/trans_user"
+		android:id="@+id/trans_username"
 		android:layout_width="match_parent"
 		android:layout_height="wrap_content"
 		android:ems="10"
@@ -72,52 +72,71 @@
 		app:layout_constraintBottom_toTopOf="@+id/trans_bar"
 		app:layout_constraintEnd_toEndOf="parent"
 		app:layout_constraintStart_toStartOf="parent"
-		app:layout_constraintTop_toBottomOf="@+id/trans_user"/>
+		app:layout_constraintTop_toBottomOf="@+id/trans_username"/>
 
-	<ImageView
-		android:id="@+id/trans_bar"
-		android:layout_width="0dp"
-		android:layout_height="60dp"
-		android:layout_marginBottom="0dp"
-		android:layout_marginLeft="0dp"
-		android:layout_marginRight="0dp"
-		app:layout_constraintBottom_toBottomOf="parent"
-		app:layout_constraintHorizontal_bias="0.0"
-		app:layout_constraintLeft_toLeftOf="@+id/trans_list"
-		app:layout_constraintRight_toRightOf="@+id/trans_list"
-		app:srcCompat="@android:color/holo_blue_dark"
-		tools:ignore="contentDescription"/>
+		<LinearLayout
+			android:id="@+id/trans_bar"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:orientation="vertical"
+			android:background="@android:color/holo_blue_dark"
+			app:layout_constraintBottom_toBottomOf="parent"
+			app:layout_constraintEnd_toEndOf="parent"
+			app:layout_constraintStart_toStartOf="parent">
 
-	<EditText
-		android:id="@+id/trans_amount"
-		android:layout_width="0dp"
-		android:layout_height="36dp"
-		android:layout_marginBottom="12dp"
-		android:layout_marginRight="4dp"
-		android:layout_marginStart="12dp"
-		android:background="@drawable/rounded_edit"
-		android:ems="10"
-		android:hint="Amount"
-		android:inputType="number"
-		android:paddingEnd="8dp"
-		android:paddingLeft="8dp"
-		android:paddingRight="8dp"
-		android:paddingStart="8dp"
-		app:layout_constraintBottom_toBottomOf="parent"
-		app:layout_constraintRight_toLeftOf="@+id/trans_send"
-		app:layout_constraintStart_toStartOf="@+id/trans_bar"/>
+			<TextView
+				android:id="@+id/trans_user"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:gravity="center"
+				android:lines="1"
+				android:singleLine="true"
+				android:text="User name"
+				android:textAppearance="?android:attr/textAppearanceMedium"
+				android:textColor="@android:color/white"/>
 
-	<ImageButton
-		android:id="@+id/trans_send"
-		android:layout_width="44dp"
-		android:layout_height="44dp"
-		android:layout_marginBottom="8dp"
-		android:layout_marginEnd="8dp"
-		android:layout_marginRight="8dp"
-		android:background="@android:color/transparent"
-		app:layout_constraintBottom_toBottomOf="parent"
-		app:layout_constraintRight_toRightOf="parent"
-		app:srcCompat="@drawable/send"
-		tools:ignore="contentDescription"/>
+			<TextView
+				android:id="@+id/trans_balance"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:layout_marginBottom="4dp"
+				android:gravity="center"
+				android:lines="1"
+				android:singleLine="true"
+				android:text="Balance: 0"
+				android:textAppearance="?android:attr/textAppearanceMedium"
+				android:textColor="@android:color/white"/>
+
+			<LinearLayout
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:gravity="center_vertical"
+				android:orientation="horizontal">
+
+				<EditText
+					android:id="@+id/trans_amount"
+					android:layout_width="0dp"
+					android:layout_height="36dp"
+					android:layout_weight="1"
+					android:layout_marginRight="4dp"
+					android:layout_marginStart="12dp"
+					android:background="@drawable/rounded_edit"
+					android:ems="10"
+					android:hint="Amount"
+					android:inputType="number"
+					android:paddingEnd="8dp"
+					android:paddingLeft="8dp"
+					android:paddingRight="8dp"
+					android:paddingStart="8dp"/>
+
+				<ImageButton
+					android:id="@+id/trans_send"
+					android:layout_width="44dp"
+					android:layout_height="44dp"
+					android:background="@android:color/transparent"
+					app:srcCompat="@drawable/send"
+					tools:ignore="contentDescription"/>
+			</LinearLayout>
+		</LinearLayout>
 	</android.support.constraint.ConstraintLayout>
 </android.support.constraint.ConstraintLayout>

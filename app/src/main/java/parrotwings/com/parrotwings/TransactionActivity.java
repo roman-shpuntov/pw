@@ -3,8 +3,8 @@ package parrotwings.com.parrotwings;
 import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.drawable.BitmapDrawable;
 import android.support.v7.app.ActionBar;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import android.util.DisplayMetrics;
@@ -13,29 +13,44 @@ import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
-import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
 
 import parrotwings.com.parrotwings.PWUtil.*;
 
 import static java.lang.Math.abs;
 
 public class TransactionActivity extends PWAppCompatActivity implements PWState.PWStateInterface {
-	private AutoCompleteTextView	mUser;
+	private AutoCompleteTextView	mUserName;
 	private EditText				mAmount;
 	private ListView				mList;
 	private ImageButton				mSend;
-	private ImageView				mDownBar;
+	private LinearLayout			mDownBar;
 	private TextView				mEmpty;
+	private TextView				mBalance;
+	private TextView				mUser;
 	private TransactionAdapter		mAdapter;
+	private List<PWTransaction>		mTransactions;
+	private List<String>			mUsers;
 
 	public static final String	INTENT_USER_NAME	= "INTENT_USER_NAME";
 	public static final String	INTENT_AMOUNT		= "INTENT_AMOUNT";
+
+	private Comparator<String> mNameComparator = new Comparator<String>() {
+		public int compare(String obj1, String obj2) {
+			return obj1.compareTo(obj2);
+		}
+	};
 
 	@Override
 	public void onReady() {}
@@ -54,30 +69,56 @@ public class TransactionActivity extends PWAppCompatActivity implements PWState.
 	public void onMessage(PWError error) {}
 
 	@Override
-	public void onInTransaction(PWTransaction trans) {
+	public void onInTransaction(final PWTransaction trans) {
 		runOnUiThread(new Runnable() {
 			@Override
 			public void run() {
+				mTransactions.add(trans);
 				mEmpty.setVisibility(View.GONE);
-				mAdapter.notifyDataSetChanged();
+
+				updateInfo();
+				updateUsers();
 			}
 		});
 	}
 
 	@Override
-	public void onOutTransaction(PWTransaction trans) {
+	public void onOutTransaction(final PWTransaction trans) {
 		runOnUiThread(new Runnable() {
 			@Override
 			public void run() {
+				mTransactions.add(trans);
 				mEmpty.setVisibility(View.GONE);
-				mAdapter.notifyDataSetChanged();
+
+				updateInfo();
+				updateUsers();
 			}
 		});
+	}
+
+	private void updateInfo() {
+		mUser.setText(PWState.getInstance().getUser().getName());
+		mBalance.setText("Balance: " + PWState.getInstance().getBalance());
 	}
 
 	public void hideKeyboard(View view) {
 		InputMethodManager inputMethodManager = (InputMethodManager) getSystemService(Activity.INPUT_METHOD_SERVICE);
 		inputMethodManager.hideSoftInputFromWindow(view.getWindowToken(), 0);
+	}
+
+	private void updateUsers() {
+		ArrayList<String>	users = new ArrayList<>();
+		for (PWTransaction t : mTransactions)
+			users.add(t.getUserName());
+
+		HashSet<String> hashSet = new HashSet<>();
+		hashSet.addAll(users);
+
+		mUsers.clear();
+		mUsers.addAll(hashSet);
+
+		Collections.sort(mUsers, mNameComparator);
+		mAdapter.notifyDataSetChanged();
 	}
 
 	@Override
@@ -93,32 +134,35 @@ public class TransactionActivity extends PWAppCompatActivity implements PWState.
 			bar.setDisplayShowHomeEnabled(true);
 		}
 
-		mUser		= findViewById(R.id.trans_user);
+		mUserName	= findViewById(R.id.trans_username);
 		mAmount		= findViewById(R.id.trans_amount);
 		mList		= findViewById(R.id.trans_list);
 		mSend		= findViewById(R.id.trans_send);
 		mDownBar	= findViewById(R.id.trans_bar);
 		mEmpty		= findViewById(R.id.trans_empty);
+		mBalance	= findViewById(R.id.trans_balance);
+		mUser		= findViewById(R.id.trans_user);
 
-		mAdapter = new TransactionAdapter(this, PWState.getInstance().getUser().getUserList());
+		mTransactions = new ArrayList<>(PWState.getInstance().getTransactions());
+		mUsers = new ArrayList<>();
+		mAdapter = new TransactionAdapter(this, mUsers);
 		mList.setAdapter(mAdapter);
-		mAdapter.notifyDataSetChanged();
+		updateUsers();
 
 		DisplayMetrics	displayMetrics = new DisplayMetrics();
 		getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
 
 		Bitmap bitmap = PWGradient.bitmapGradient(
-				(int) (displayMetrics.widthPixels * displayMetrics.density),
-				(int) (mDownBar.getLayoutParams().height * displayMetrics.density),
+				(int) (displayMetrics.widthPixels * displayMetrics.density), 1,
 				getResources().getColor(R.color.colorGradientStart),
 				getResources().getColor(R.color.colorGradientEnd));
-		mDownBar.setImageBitmap(bitmap);
+		mDownBar.setBackground(new BitmapDrawable(getResources(), bitmap));
 
 		mList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
 			@Override
 			public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
 				String user = mAdapter.getItem(i);
-				mUser.setText(user);
+				mUserName.setText(user);
 			}
 		});
 
@@ -127,8 +171,9 @@ public class TransactionActivity extends PWAppCompatActivity implements PWState.
 			public void onClick(View view) {
 				hideKeyboard(view);
 
-				String samount = mAmount.getText().toString();
-				long amount = 0;
+				String	userName	= mUserName.getText().toString();
+				String	samount		= mAmount.getText().toString();
+				long	amount		= 0;
 
 				try {
 					amount = Long.parseLong(samount);
@@ -137,7 +182,7 @@ public class TransactionActivity extends PWAppCompatActivity implements PWState.
 					return;
 				}
 
-				long balance = PWState.getInstance().getUser().getBalance();
+				long balance = PWState.getInstance().getBalance();
 				if (balance < amount) {
 					Toast.makeText(TransactionActivity.this, "Insufficient funds on your account. Please change your amount.", Toast.LENGTH_LONG).show();
 					return;
@@ -148,7 +193,12 @@ public class TransactionActivity extends PWAppCompatActivity implements PWState.
 					return;
 				}
 
-				int rc = PWState.getInstance().transaction(mUser.getText().toString(), amount);
+				if (userName.compareTo(PWState.getInstance().getUser().getName()) == 0) {
+					Toast.makeText(TransactionActivity.this, "You can not transfer to myself.", Toast.LENGTH_LONG).show();
+					return;
+				}
+
+				int rc = PWState.getInstance().transaction(userName, amount);
 				if (rc != 0) {
 					PWLog.error("Transaction failed on transaction");
 					Toast.makeText(TransactionActivity.this, "Something wrong on transaction. Please try again later.", Toast.LENGTH_LONG).show();
@@ -161,16 +211,18 @@ public class TransactionActivity extends PWAppCompatActivity implements PWState.
 			long amount = intent.getLongExtra(INTENT_AMOUNT, 0);
 			amount = abs(amount);
 			mAmount.setText(String.valueOf(amount));
-			mUser.setText(intent.getStringExtra(INTENT_USER_NAME));
+			mUserName.setText(intent.getStringExtra(INTENT_USER_NAME));
 		}
 
-		ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, PWState.getInstance().getUser().getUserList());
-		mUser.setAdapter(adapter);
+		ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, mUsers);
+		mUserName.setAdapter(adapter);
 
-		if (PWState.getInstance().getUser().getUserList().size() == 0)
+		if (mUsers.size() == 0)
 			mEmpty.setVisibility(View.VISIBLE);
 		else
 			mEmpty.setVisibility(View.GONE);
+
+		// TODO: sort users
 
 		PWState.getInstance().addListener(this);
 	}
@@ -184,7 +236,12 @@ public class TransactionActivity extends PWAppCompatActivity implements PWState.
 	@Override
 	protected void onDestroy() {
 		super.onDestroy();
-
 		PWState.getInstance().removeListener(this);
+	}
+
+	@Override
+	protected void onResume() {
+		super.onResume();
+		updateInfo();
 	}
 }

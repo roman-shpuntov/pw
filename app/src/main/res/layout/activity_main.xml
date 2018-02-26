@@ -10,42 +10,26 @@
 	<android.support.v7.widget.Toolbar
 		android:id="@+id/main_toolbar"
 		android:layout_width="match_parent"
-		android:layout_height="@dimen/titleMainSpace"
+		android:layout_height="?android:attr/actionBarSize"
 		android:background="@color/colorPrimary"
-		app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
-		android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar">
+		app:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
+		app:popupTheme="@style/ThemeOverlay.AppCompat.Light">
 
-		<LinearLayout
+		<TextView
+			android:id="@+id/main_title"
+			android:textColor="@android:color/white"
+			android:textAppearance="?android:attr/textAppearanceMedium"
 			android:layout_width="match_parent"
 			android:layout_height="wrap_content"
-			android:orientation="vertical">
-
-			<TextView
-				android:id="@+id/main_user"
-				android:textColor="@android:color/white"
-				android:textAppearance="?android:attr/textAppearanceMedium"
-				android:layout_width="match_parent"
-				android:layout_height="wrap_content"
-				android:text="@string/app_name"
-				android:lines="1"
-				android:singleLine="true"/>
-
-			<TextView
-				android:id="@+id/main_balance"
-				android:textColor="@android:color/white"
-				android:textAppearance="?android:attr/textAppearanceMedium"
-				android:layout_width="match_parent"
-				android:layout_height="wrap_content"
-				android:text="Balance: 0"
-				android:lines="1"
-				android:singleLine="true"/>
-		</LinearLayout>
+			android:lines="1"
+			android:singleLine="true"
+			android:text="@string/app_name"/>
 	</android.support.v7.widget.Toolbar>
 
 	<android.support.constraint.ConstraintLayout
 		android:layout_width="match_parent"
 		android:layout_height="match_parent"
-		android:layout_marginTop="@dimen/titleMainSpace"
+		android:layout_marginTop="?android:attr/actionBarSize"
 		app:layout_constraintBottom_toBottomOf="parent"
 		app:layout_constraintEnd_toEndOf="parent"
 		app:layout_constraintStart_toStartOf="parent"
@@ -63,14 +47,53 @@
 			android:textSize="@dimen/emptyTextSize"
 			android:textStyle="italic"/>
 
-		<ListView
-			android:id="@+id/main_list"
-			android:layout_width="match_parent"
-			android:layout_height="match_parent"
-			android:background="@android:color/transparent"
-			android:dividerHeight="1dp"
+		<android.support.v7.widget.RecyclerView
+			android:id="@+id/main_rv"
+			android:layout_width="0dp"
+			android:layout_height="0dp"
+			android:clickable="true"
+			android:focusable="true"
+			android:scrollbars="vertical"
 			android:textColor="@android:color/black"
+			app:layout_constraintBottom_toTopOf="@+id/main_bar"
+			app:layout_constraintEnd_toEndOf="parent"
+			app:layout_constraintStart_toStartOf="parent"
+			app:layout_constraintTop_toTopOf="parent"
 			tools:layout_constraintLeft_creator="1"
-			tools:layout_constraintTop_creator="1"/>
+			tools:layout_constraintTop_creator="1">
+		</android.support.v7.widget.RecyclerView>
+
+		<LinearLayout
+			android:id="@+id/main_bar"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:orientation="vertical"
+			android:background="@android:color/holo_blue_dark"
+			app:layout_constraintBottom_toBottomOf="parent"
+			app:layout_constraintEnd_toEndOf="parent"
+			app:layout_constraintStart_toStartOf="parent">
+
+			<TextView
+				android:id="@+id/main_user"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:gravity="center"
+				android:lines="1"
+				android:singleLine="true"
+				android:text="User name"
+				android:textAppearance="?android:attr/textAppearanceMedium"
+				android:textColor="@android:color/white"/>
+
+			<TextView
+				android:id="@+id/main_balance"
+				android:layout_width="match_parent"
+				android:layout_height="wrap_content"
+				android:gravity="center"
+				android:lines="1"
+				android:singleLine="true"
+				android:text="Balance: 0"
+				android:textAppearance="?android:attr/textAppearanceMedium"
+				android:textColor="@android:color/white"/>
+		</LinearLayout>
 	</android.support.constraint.ConstraintLayout>
 </android.support.constraint.ConstraintLayout>

@@ -1,13 +1,10 @@
 package parrotwings.com.parrotwings.PWUtil;
 
-import android.view.MotionEvent;
-
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
@@ -470,8 +467,9 @@ public class PWState implements PWParser.PWParserInterface {
 			mTimer = null;
 		}
 
-		mState		= STATE_NONE;
-		mUser		= new PWXUser();
+		mState			= STATE_NONE;
+		mUser			= new PWXUser();
+		mReadyNotified	= false;
 
 		mTimer = new Timer();
 		mTimer.schedule(new ProcessingTask(), 1000, 1000);
