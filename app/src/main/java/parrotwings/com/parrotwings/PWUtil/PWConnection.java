@@ -95,8 +95,6 @@ public class PWConnection {
 					} catch (InterruptedException e) {}
 					mLock.unlock();
 
-					PWLog.error("transfer.size " + transfer.size());
-
 					for (JSONObject json : transfer) {
 						HTTPResponse resp = doTransfer(json);
 
@@ -237,6 +235,8 @@ public class PWConnection {
 	}
 
 	public int send(JSONObject json) {
+		PWLog.debug("pwconnection send");
+
 		mLock.lock();
 		mTransfer.add(json);
 		mReady.signal();
@@ -246,6 +246,8 @@ public class PWConnection {
 	}
 
 	public void close() {
+		PWLog.debug("pwconnection close");
+
 		mRunning = false;
 
 		mLock.lock();

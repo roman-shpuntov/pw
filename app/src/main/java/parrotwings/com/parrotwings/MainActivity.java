@@ -72,6 +72,8 @@ public class MainActivity extends PWAppCompatActivity implements PWState.PWState
 		runOnUiThread(new Runnable() {
 			@Override
 			public void run() {
+				PWState.getInstance().logout();
+
 				Intent intent = new Intent(MainActivity.this, LoginActivity.class);
 				startActivity(intent);
 				finish();
@@ -143,6 +145,15 @@ public class MainActivity extends PWAppCompatActivity implements PWState.PWState
 		}
 	}
 
+	Foreground.Listener mListener = new Foreground.Listener() {
+		public void onBecameForeground(){}
+
+		public void onBecameBackground(){
+			PWState.getInstance().logout();
+			finish();
+		}
+	};
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -183,8 +194,10 @@ public class MainActivity extends PWAppCompatActivity implements PWState.PWState
 
 		PWState.getInstance().addListener(this);
 
-		if (!((mChanging & ActivityInfo.CONFIG_ORIENTATION) == ActivityInfo.CONFIG_ORIENTATION))
+		if ((mChanging & ActivityInfo.CONFIG_ORIENTATION) != ActivityInfo.CONFIG_ORIENTATION)
 			Toast.makeText(MainActivity.this, "Welcome to " + getResources().getString(R.string.app_name) + " system.", Toast.LENGTH_SHORT).show();
+
+		Foreground.get(getApplication()).addListener(mListener);
 	}
 
 	@Override
@@ -192,10 +205,9 @@ public class MainActivity extends PWAppCompatActivity implements PWState.PWState
 		super.onDestroy();
 
 		PWState.getInstance().removeListener(this);
-		if (isFinishing())
-			PWState.getInstance().logout();
-
 		mChanging = getChangingConfigurations();
+
+		Foreground.get(getApplication()).removeListener(mListener);
 	}
 
 	@Override
@@ -253,6 +265,8 @@ public class MainActivity extends PWAppCompatActivity implements PWState.PWState
 				return true;
 
 			case R.id.mitem_logout: {
+				PWState.getInstance().logout();
+
 				Intent intent = new Intent(this, LoginActivity.class);
 				startActivity(intent);
 				finish();

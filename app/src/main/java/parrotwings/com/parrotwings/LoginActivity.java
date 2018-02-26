@@ -105,11 +105,11 @@ public class LoginActivity extends AppCompatActivity implements PWState.PWStateI
 		PWState.getInstance().addListener(this);
 
 		// DEBUG
-		//mEmail.setText("email123@domain.com");
-		//mPassword.setText("password123");
+		mEmail.setText("email123@domain.com");
+		mPassword.setText("password123");
 
-		mEmail.setText("email456@domain.com");
-		mPassword.setText("password456");
+		//mEmail.setText("email456@domain.com");
+		//mPassword.setText("password456");
 	}
 
 	@Override

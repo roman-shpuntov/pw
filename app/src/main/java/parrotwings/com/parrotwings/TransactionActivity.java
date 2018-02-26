@@ -121,6 +121,14 @@ public class TransactionActivity extends PWAppCompatActivity implements PWState.
 		mAdapter.notifyDataSetChanged();
 	}
 
+	Foreground.Listener mListener = new Foreground.Listener() {
+		public void onBecameForeground(){}
+
+		public void onBecameBackground(){
+			finish();
+		}
+	};
+
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -222,9 +230,9 @@ public class TransactionActivity extends PWAppCompatActivity implements PWState.
 		else
 			mEmpty.setVisibility(View.GONE);
 
-		// TODO: sort users
-
 		PWState.getInstance().addListener(this);
+
+		Foreground.get(getApplication()).addListener(mListener);
 	}
 
 	@Override
@@ -237,6 +245,8 @@ public class TransactionActivity extends PWAppCompatActivity implements PWState.
 	protected void onDestroy() {
 		super.onDestroy();
 		PWState.getInstance().removeListener(this);
+
+		Foreground.get(getApplication()).removeListener(mListener);
 	}
 
 	@Override

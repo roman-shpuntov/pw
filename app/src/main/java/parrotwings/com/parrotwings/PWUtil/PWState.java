@@ -99,7 +99,7 @@ public class PWState implements PWParser.PWParserInterface {
 
 	private static volatile PWState		mInstance;
 	private List<PWStateInterface>		mListeners;
-	private PWXUser						mUser;
+	private PWXUser						mXUser;
 	private int							mState;
 	private Timer						mTimer;
 	private PWParser					mParser;
@@ -130,7 +130,7 @@ public class PWState implements PWParser.PWParserInterface {
 		}
 
 		if (extractToken(result.getDescription()) == 0) {
-			mParser.info(mUser, mUser.getToken());
+			mParser.info(mXUser, mXUser.getToken());
 			return;
 		}
 
@@ -157,7 +157,8 @@ public class PWState implements PWParser.PWParserInterface {
 		}
 
 		if (extractToken(result.getDescription()) == 0) {
-			mParser.info(mUser, mUser.getToken());
+			PWLog.debug("pwstate onResponseLogin info");
+			mParser.info(mXUser, mXUser.getToken());
 			return;
 		}
 
@@ -172,8 +173,10 @@ public class PWState implements PWParser.PWParserInterface {
 		}
 
 		if (extractInfo(result.getDescription()) == 0) {
+			PWLog.debug("pwstate onResponseInfo info");
+
 			mListCounter.incrementAndGet();
-			mParser.list(mUser, mUser.getToken());
+			mParser.list(mXUser, mXUser.getToken());
 			return;
 		}
 
@@ -233,7 +236,7 @@ public class PWState implements PWParser.PWParserInterface {
 			return -1;
 		}
 
-		mUser.setToken(token);
+		mXUser.setToken(token);
 		return 0;
 	}
 
@@ -257,11 +260,11 @@ public class PWState implements PWParser.PWParserInterface {
 		if (name == null || email == null)
 			return -1;
 
-		if (email.compareTo(mUser.getEmail()) != 0)
+		if (email.compareTo(mXUser.getEmail()) != 0)
 			return -1;
 
-		mUser.setName(name);
-		mUser.setBalance(balance);
+		mXUser.setName(name);
+		mXUser.setBalance(balance);
 
 		return 0;
 	}
@@ -291,11 +294,11 @@ public class PWState implements PWParser.PWParserInterface {
 			return -1;
 		}
 
-		List<PWTransaction>	itrans = mUser.syncTransactions(xtrans);
+		List<PWTransaction>	itrans = mXUser.syncTransactions(xtrans);
 		if (mState == STATE_READY) {
 			if (itrans.size() != 0) {
 				int last = itrans.size() - 1;
-				mUser.setBalance(itrans.get(last).getBalance());
+				mXUser.setBalance(itrans.get(last).getBalance());
 				notifyInTrans(itrans);
 			}
 		}
@@ -330,8 +333,8 @@ public class PWState implements PWParser.PWParserInterface {
 		if (trans == null)
 			return -1;
 
-		mUser.addTransaction(trans);
-		mUser.setBalance(balance);
+		mXUser.addTransaction(trans);
+		mXUser.setBalance(balance);
 		notifyOutTrans(trans);
 
 		return 0;
@@ -402,17 +405,19 @@ public class PWState implements PWParser.PWParserInterface {
 		@Override
 		public void run() {
 			if (mState == STATE_READY) {
-				if (mListCounter.compareAndSet(0, 1))
-					mParser.list(mUser, mUser.getToken());
+				if (mListCounter.compareAndSet(0, 1)) {
+					PWLog.debug("pwstate ProcessingTask list");
+					mParser.list(mXUser, mXUser.getToken());
+				}
 			}
 		}
 	}
 
 	private PWState() {
 		logout();
-		mListeners = new LinkedList<>();
-		mListCounter = new AtomicInteger(0);
-		mReadyNotified = false;
+
+		mListeners		= new LinkedList<>();
+		mReadyNotified	= false;
 	}
 
 	public static PWState getInstance() {
@@ -428,7 +433,7 @@ public class PWState implements PWParser.PWParserInterface {
 	}
 
 	public PWUser getUser() {
-		return mUser;
+		return mXUser;
 	}
 
 	public void addListener(PWStateInterface listener) {
@@ -444,14 +449,16 @@ public class PWState implements PWParser.PWParserInterface {
 	}
 
 	public List<PWTransaction> getTransactions() {
-		return mUser.getTransactions();
+		return mXUser.getTransactions();
 	}
 
 	public long getBalance() {
-		return mUser.getBalance();
+		return mXUser.getBalance();
 	}
 
 	public void logout() {
+		PWLog.debug("pwstate logout");
+
 		if (mParser != null) {
 			mParser.logout();
 			mParser.removeListener(this);
@@ -468,24 +475,31 @@ public class PWState implements PWParser.PWParserInterface {
 		}
 
 		mState			= STATE_NONE;
-		mUser			= new PWXUser();
+		mXUser			= new PWXUser();
 		mReadyNotified	= false;
+		mListCounter	= new AtomicInteger(0);
 
 		mTimer = new Timer();
 		mTimer.schedule(new ProcessingTask(), 1000, 1000);
 	}
 
 	public int register(String name, String email, String password) {
-		mUser = new PWXUser(new PWUser(name, email, password));
-		return mParser.register(mUser);
+		PWLog.debug("pwstate register");
+
+		mXUser = new PWXUser(new PWUser(name, email, password));
+		return mParser.register(mXUser);
 	}
 
 	public int login(String email, String password) {
-		mUser = new PWXUser(new PWUser(email, password));
-		return mParser.login(mUser);
+		PWLog.debug("pwstate login");
+
+		mXUser = new PWXUser(new PWUser(email, password));
+		return mParser.login(mXUser);
 	}
 
 	public int transaction(String name, long amount) {
-		return mParser.transaction(mUser, mUser.getToken(), name, amount);
+		PWLog.debug("pwstate transaction");
+
+		return mParser.transaction(mXUser, mXUser.getToken(), name, amount);
 	}
 }

@@ -136,6 +136,8 @@ public class PWParser implements PWConnection.PWConnectionInterface {
 	}
 
 	public int register(PWUser user) {
+		PWLog.debug("pwparser register");
+
 		JSONObject payload = new JSONObject();
 		try {
 			payload.put("username", user.getName());
@@ -170,6 +172,8 @@ public class PWParser implements PWConnection.PWConnectionInterface {
 	}
 
 	public int login(PWUser user) {
+		PWLog.debug("pwparser login");
+
 		JSONObject payload = new JSONObject();
 		try {
 			payload.put("email", user.getEmail());
@@ -203,6 +207,8 @@ public class PWParser implements PWConnection.PWConnectionInterface {
 	}
 
 	public int info(PWUser user, String token) {
+		PWLog.debug("pwparser info");
+
 		JSONObject header = new JSONObject();
 		try {
 			header.put(AUTHORIZATION, BEARER + " " + token);
@@ -226,6 +232,8 @@ public class PWParser implements PWConnection.PWConnectionInterface {
 	}
 
 	public int list(PWUser user, String token) {
+		PWLog.debug("pwparser list");
+
 		JSONObject header = new JSONObject();
 		try {
 			header.put(AUTHORIZATION, BEARER + " " + token);
@@ -249,6 +257,8 @@ public class PWParser implements PWConnection.PWConnectionInterface {
 	}
 
 	public int transaction(PWUser user, String token, String name, long amount) {
+		PWLog.debug("pwparser transaction");
+
 		JSONObject payload = new JSONObject();
 		try {
 			payload.put("name", name);
@@ -283,6 +293,8 @@ public class PWParser implements PWConnection.PWConnectionInterface {
 	}
 
 	public void logout() {
+		PWLog.debug("pwparser logout");
+
 		mConnection.close();
 	}
 }
